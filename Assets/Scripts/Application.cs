@@ -7,6 +7,7 @@ public class Application : MonoBehaviour
 
     public PointGravity GravityBody;
 
+    // should be a smart list implementation managing list indices and avoiding the retrieval of null references
     public List<Planetoid> planetoids;
 
     float lastSpawned = 0.0f;
@@ -14,6 +15,8 @@ public class Application : MonoBehaviour
 
     void Start ()
     {
+        TryFullScreen();
+
         if (Instance != null)
             Instance = this;
 
@@ -33,6 +36,16 @@ public class Application : MonoBehaviour
                 lastSpawned = elapsedTime;
             }
             Debug.DrawLine(GravityBody.Position, spawnVector);
+        }
+    }
+
+    void TryFullScreen()
+    {
+        // external display (executable only)
+        if (Display.displays.Length > 1)
+        {
+            Display.displays[1].Activate();
+            Screen.fullScreen = true;
         }
     }
 
