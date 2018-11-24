@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using Assets.Scripts;
+using System.Collections.Generic;
 using UnityEngine;
 
 public class Application : MonoBehaviour
@@ -10,6 +11,8 @@ public class Application : MonoBehaviour
     // should be a smart list implementation managing list indices and avoiding the retrieval of null references
     public List<Planetoid> planetoids;
 
+    public Camera OverlayCamera;
+
     float lastSpawned = 0.0f;
     float spawnDelay = 1.0f;
 
@@ -19,6 +22,15 @@ public class Application : MonoBehaviour
 
         if (Instance == null)
             Instance = this;
+
+        GameObject ob = new GameObject("OverlayCamera");
+        OverlayCamera = ob.AddComponent<Camera>();
+        OverlayCamera.enabled = false;
+
+        CopyCamera cc = ob.AddComponent<CopyCamera>();
+        cc.Initialize(Camera.main);
+
+        OverlayCamera.cullingMask = 1 << LayerMask.NameToLayer("KinectBody");
 
         planetoids = new List<Planetoid>();
     }

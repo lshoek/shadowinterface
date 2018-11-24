@@ -9,7 +9,7 @@ public class BodySourceView : MonoBehaviour
     public GameObject BodySourceManager;
     public Transform parentTransform;
 
-    private Material jointMaterial, boneMaterial;
+    [SerializeField] Material jointMaterial, boneMaterial;
     
     private Dictionary<ulong, GameObject> _Bodies = new Dictionary<ulong, GameObject>();
     private BodySourceManager _BodyManager;
@@ -32,14 +32,14 @@ public class BodySourceView : MonoBehaviour
         //{ Kinect.JointType.HandTipLeft, Kinect.JointType.HandLeft },
         //{ Kinect.JointType.ThumbLeft, Kinect.JointType.HandLeft },
         //{ Kinect.JointType.HandLeft, Kinect.JointType.WristLeft },
-        { Kinect.JointType.HandLeft, Kinect.JointType.ElbowLeft },
+        { Kinect.JointType.WristLeft, Kinect.JointType.ElbowLeft },
         { Kinect.JointType.ElbowLeft, Kinect.JointType.ShoulderLeft },
         { Kinect.JointType.ShoulderLeft, Kinect.JointType.SpineShoulder },
         
         //{ Kinect.JointType.HandTipRight, Kinect.JointType.HandRight },
         //{ Kinect.JointType.ThumbRight, Kinect.JointType.HandRight },
         //{ Kinect.JointType.HandRight, Kinect.JointType.WristRight },
-        { Kinect.JointType.HandRight, Kinect.JointType.ElbowRight },
+        { Kinect.JointType.WristRight, Kinect.JointType.ElbowRight },
         { Kinect.JointType.ElbowRight, Kinect.JointType.ShoulderRight },
         { Kinect.JointType.ShoulderRight, Kinect.JointType.SpineShoulder },
         
@@ -122,7 +122,7 @@ public class BodySourceView : MonoBehaviour
     {
         if (jt == Kinect.JointType.ThumbLeft | jt == Kinect.JointType.ThumbRight |
             jt == Kinect.JointType.HandTipLeft | jt == Kinect.JointType.HandTipRight |
-            jt == Kinect.JointType.WristLeft | jt == Kinect.JointType.WristRight)
+            jt == Kinect.JointType.HandLeft | jt == Kinect.JointType.HandRight)
             return true;
         return false;
     }
@@ -138,15 +138,8 @@ public class BodySourceView : MonoBehaviour
         ob.AddComponent<CapsuleCollider>().height = 1000.0f;
 
         // always render on top
-        ob.AddComponent<SetRenderQueue>();
+        ob.layer = LayerMask.NameToLayer("KinectBody");
         ob.GetComponent<Renderer>().material = jointMaterial;
-
-        // linerenderer for bones
-        LineRenderer lr = ob.AddComponent<LineRenderer>();
-        lr.positionCount = 2;
-        lr.material = BoneMaterial;
-        lr.startWidth = 0.5f;
-        lr.endWidth = 0.1f;
 
         return ob;
     }
@@ -159,7 +152,7 @@ public class BodySourceView : MonoBehaviour
         ob = UpdateBone(ob, source, dest);
 
         // always render on top
-        ob.AddComponent<SetRenderQueue>();
+        ob.layer = LayerMask.NameToLayer("KinectBody");
         ob.GetComponent<Renderer>().material = boneMaterial;
 
         return ob;
@@ -170,7 +163,7 @@ public class BodySourceView : MonoBehaviour
         Vector3 src = GetVector3FromJoint(sourceJoint);
         Vector3 dst = GetVector3FromJoint(destJoint);
         Vector3 offset = dst - src;
-        Vector3 pos = src + (offset / 2.0f);
+        Vector3 pos = src + offset*0.5f;
 
         ob.transform.position = pos;
         ob.transform.LookAt(src);
