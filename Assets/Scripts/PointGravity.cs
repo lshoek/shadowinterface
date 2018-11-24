@@ -18,6 +18,7 @@ public class PointGravity : MonoBehaviour
 
     void FixedUpdate()
     {
+        RefreshColliders(); // quick and dirty for testing purposes
         foreach (Collider c in Colliders)
         {
             Rigidbody rb = c.attachedRigidbody;
@@ -28,8 +29,6 @@ public class PointGravity : MonoBehaviour
                 Vector3 perpdir = Quaternion.AngleAxis(-90, Vector3.down) * Vector3.Normalize(dir) * 8.0f;
 
                 rb.AddForce(dir);
-                //rb.AddForce(perpdir);
-
                 Debug.DrawLine(c.transform.position, c.transform.position + dir * 0.1f);
             }
         }

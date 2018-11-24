@@ -11,13 +11,13 @@ public class Application : MonoBehaviour
     public List<Planetoid> planetoids;
 
     float lastSpawned = 0.0f;
-    float spawnDelay = 0.75f;
+    float spawnDelay = 1.0f;
 
     void Start ()
     {
         TryFullScreen();
 
-        if (Instance != null)
+        if (Instance == null)
             Instance = this;
 
         planetoids = new List<Planetoid>();
@@ -32,7 +32,8 @@ public class Application : MonoBehaviour
 
             if (elapsedTime - lastSpawned > spawnDelay)
             {
-                SpawnPlanetoid(spawnVector);
+                if (planetoids.Count < 6)
+                    SpawnPlanetoid(spawnVector);
                 lastSpawned = elapsedTime;
             }
             Debug.DrawLine(GravityBody.Position, spawnVector);
