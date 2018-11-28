@@ -14,7 +14,7 @@ public class Application : MonoBehaviour
     public Camera OverlayCamera;
 
     float lastSpawned = 0.0f;
-    float spawnDelay = 1.0f;
+    float spawnDelay = 5.0f;
 
     void Start ()
     {
@@ -44,7 +44,7 @@ public class Application : MonoBehaviour
 
             if (elapsedTime - lastSpawned > spawnDelay)
             {
-                if (planetoids.Count < 6)
+                if (planetoids.Count < 16)
                     SpawnPlanetoid(spawnVector);
                 lastSpawned = elapsedTime;
             }

@@ -149,6 +149,13 @@ public class BodySourceView : MonoBehaviour
         // special cylinder instantiated between two points
         GameObject ob = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
 
+        if (ob.GetComponent<Collider>() != null)
+            Destroy(ob.GetComponent<Collider>());
+
+        // fake (but clever) 2d physics
+        GameObject child = new GameObject("collider", typeof(CapsuleCollider));
+        child.transform.SetParent(ob.transform);
+
         ob = UpdateBone(ob, source, dest);
 
         // always render on top
@@ -176,9 +183,7 @@ public class BodySourceView : MonoBehaviour
         Quaternion rot = new Quaternion { eulerAngles = new Vector3(90.0f, 0.0f, 0.0f) };
         ob.transform.localRotation *= rot;
 
-        // scale colliders seperately from actual object in world space
-        //ob.GetComponent<CapsuleCollider>()...
-
+        // new plan: instantiate a number of sphere colliders between two points and multiply their height
         return ob;
     }
 
