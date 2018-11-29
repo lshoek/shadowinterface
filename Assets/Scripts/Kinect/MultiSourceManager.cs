@@ -54,15 +54,15 @@ public class MultiSourceManager : MonoBehaviour {
             var frame = _Reader.AcquireLatestFrame();
             if (frame != null)
             {
-                var colorFrame = frame.ColorFrameReference.AcquireFrame();
-                if (colorFrame != null)
-                {
+                //var colorFrame = frame.ColorFrameReference.AcquireFrame();
+                //if (colorFrame != null)
+                //{
                     var depthFrame = frame.DepthFrameReference.AcquireFrame();
                     if (depthFrame != null)
                     {
-                        colorFrame.CopyConvertedFrameDataToArray(_ColorData, ColorImageFormat.Rgba);
-                        _ColorTexture.LoadRawTextureData(_ColorData);
-                        _ColorTexture.Apply();
+                        //colorFrame.CopyConvertedFrameDataToArray(_ColorData, ColorImageFormat.Rgba);
+                        //_ColorTexture.LoadRawTextureData(_ColorData);
+                        //_ColorTexture.Apply();
                         
                         depthFrame.CopyFrameDataToArray(_DepthData);
                         
@@ -70,9 +70,9 @@ public class MultiSourceManager : MonoBehaviour {
                         depthFrame = null;
                     }
                 
-                    colorFrame.Dispose();
-                    colorFrame = null;
-                }
+                    //colorFrame.Dispose();
+                    //colorFrame = null;
+                //}
                 
                 frame = null;
             }

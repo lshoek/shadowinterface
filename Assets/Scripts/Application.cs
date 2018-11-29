@@ -8,21 +8,25 @@ public class Application : MonoBehaviour
 
     public PointGravity GravityBody;
 
-    // should be a smart list implementation managing list indices and avoiding the retrieval of null references
-    public List<Planetoid> planetoids;
+    [HideInInspector] public Camera OverlayCamera;
 
-    public Camera OverlayCamera;
+    // should be a smart list implementation managing list indices and avoiding the retrieval of null references
+    private List<Planetoid> planetoids;
+
+    public delegate void OnInitializedDelegate();
+    public OnInitializedDelegate OnInitialized;
 
     float lastSpawned = 0.0f;
     float spawnDelay = 5.0f;
 
-    void Start ()
+    void Awake()
     {
-        TryFullScreen();
-
         if (Instance == null)
             Instance = this;
+    }
 
+    void Start()
+    {
         GameObject ob = new GameObject("OverlayCamera");
         OverlayCamera = ob.AddComponent<Camera>();
         OverlayCamera.enabled = false;
@@ -33,9 +37,12 @@ public class Application : MonoBehaviour
         OverlayCamera.cullingMask = 1 << LayerMask.NameToLayer("KinectBody");
 
         planetoids = new List<Planetoid>();
+
+        if (OnInitialized != null)
+            OnInitialized();
     }
 	
-	void Update ()
+	void Update()
     {
         if (GravityBody != null)
         {
@@ -44,21 +51,11 @@ public class Application : MonoBehaviour
 
             if (elapsedTime - lastSpawned > spawnDelay)
             {
-                if (planetoids.Count < 16)
+                if (planetoids.Count <= 8)
                     SpawnPlanetoid(spawnVector);
                 lastSpawned = elapsedTime;
             }
             Debug.DrawLine(GravityBody.Position, spawnVector);
-        }
-    }
-
-    void TryFullScreen()
-    {
-        // external display (executable only)
-        if (Display.displays.Length > 1)
-        {
-            Display.displays[1].Activate();
-            Screen.fullScreen = true;
         }
     }
 

@@ -1,15 +1,13 @@
 ﻿using UnityEngine;
 using System.Collections.Generic;
 using Kinect = Windows.Kinect;
-using System;
 
 public class BodySourceView : MonoBehaviour 
 {
-    public Material BoneMaterial;
     public GameObject BodySourceManager;
     public Transform parentTransform;
 
-    [SerializeField] Material jointMaterial, boneMaterial;
+    private Material jointMaterial, boneMaterial;
     
     private Dictionary<ulong, GameObject> _Bodies = new Dictionary<ulong, GameObject>();
     private BodySourceManager _BodyManager;

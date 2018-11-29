@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using UnityEngine.UI;
+using Windows.Kinect;
 
 public class KinectViewer : MonoBehaviour
 {
@@ -9,5 +10,5 @@ public class KinectViewer : MonoBehaviour
 	void Update ()
     {
         image.texture = manager.GetColorTexture();
-	}
+    }
 }
