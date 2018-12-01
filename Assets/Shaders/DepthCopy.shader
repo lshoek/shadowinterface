@@ -46,7 +46,7 @@ Shader "Custom/DepthCopy"
 				fixed pct = tex2D(_MainTex, i.uv).r;
 
 				fixed alpha = ceil(inv(pct));
-				alpha = (pct > _Threshold) ? 0 : alpha;
+				alpha = lerp(0, alpha, step(pct, _Threshold));
 
 				return fixed4(pct, pct, pct, alpha);
 			}
