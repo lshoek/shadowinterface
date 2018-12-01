@@ -136,7 +136,7 @@ public class BodySourceView : MonoBehaviour
         ob.AddComponent<CapsuleCollider>().height = 1000.0f;
 
         // always render on top
-        ob.layer = LayerMask.NameToLayer("KinectBody");
+        //ob.layer = LayerMask.NameToLayer("KinectBody");
         ob.GetComponent<Renderer>().material = jointMaterial;
 
         return ob;
@@ -157,7 +157,7 @@ public class BodySourceView : MonoBehaviour
         ob = UpdateBone(ob, source, dest);
 
         // always render on top
-        ob.layer = LayerMask.NameToLayer("KinectBody");
+        //ob.layer = LayerMask.NameToLayer("KinectBody");
         ob.GetComponent<Renderer>().material = boneMaterial;
 
         return ob;

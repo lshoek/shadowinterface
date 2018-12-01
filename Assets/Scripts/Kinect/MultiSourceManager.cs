@@ -3,19 +3,19 @@ using System.Collections;
 using Windows.Kinect;
 
 public class MultiSourceManager : MonoBehaviour {
-    public int ColorWidth { get; private set; }
-    public int ColorHeight { get; private set; }
+    //public int ColorWidth { get; private set; }
+    //public int ColorHeight { get; private set; }
     
     private KinectSensor _Sensor;
     private MultiSourceFrameReader _Reader;
-    private Texture2D _ColorTexture;
+    //private Texture2D _ColorTexture;
     private ushort[] _DepthData;
-    private byte[] _ColorData;
+    //private byte[] _ColorData;
 
-    public Texture2D GetColorTexture()
-    {
-        return _ColorTexture;
-    }
+    //public Texture2D GetColorTexture()
+    //{
+    //    return _ColorTexture;
+    //}
     
     public ushort[] GetDepthData()
     {
@@ -30,12 +30,12 @@ public class MultiSourceManager : MonoBehaviour {
         {
             _Reader = _Sensor.OpenMultiSourceFrameReader(FrameSourceTypes.Color | FrameSourceTypes.Depth);
             
-            var colorFrameDesc = _Sensor.ColorFrameSource.CreateFrameDescription(ColorImageFormat.Rgba);
-            ColorWidth = colorFrameDesc.Width;
-            ColorHeight = colorFrameDesc.Height;
+            //var colorFrameDesc = _Sensor.ColorFrameSource.CreateFrameDescription(ColorImageFormat.Rgba);
+            //ColorWidth = colorFrameDesc.Width;
+            //ColorHeight = colorFrameDesc.Height;
             
-            _ColorTexture = new Texture2D(colorFrameDesc.Width, colorFrameDesc.Height, TextureFormat.RGBA32, false);
-            _ColorData = new byte[colorFrameDesc.BytesPerPixel * colorFrameDesc.LengthInPixels];
+            //_ColorTexture = new Texture2D(colorFrameDesc.Width, colorFrameDesc.Height, TextureFormat.RGBA32, false);
+            //_ColorData = new byte[colorFrameDesc.BytesPerPixel * colorFrameDesc.LengthInPixels];
             
             var depthFrameDesc = _Sensor.DepthFrameSource.FrameDescription;
             _DepthData = new ushort[depthFrameDesc.LengthInPixels];

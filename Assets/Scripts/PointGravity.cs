@@ -26,7 +26,6 @@ public class PointGravity : MonoBehaviour
             {
                 Vector3 offset = transform.position - c.transform.position;
                 Vector3 dir = offset / offset.sqrMagnitude * mainRb.mass * 2.0f;
-                Vector3 perpdir = Quaternion.AngleAxis(-90, Vector3.down) * Vector3.Normalize(dir) * 8.0f;
 
                 rb.AddForce(dir);
                 Debug.DrawLine(c.transform.position, c.transform.position + dir * 0.1f);

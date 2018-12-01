@@ -4,6 +4,7 @@ Shader "Custom/DepthObjectDebug"
 	{
 	    _Color ("Main Color", Color) = (1,1,1,1)
 	    _MainTex ("Base (RGB)", 2D) = "white" {}
+	    _Threshold ("Threshold", Float) = -1.0
 	}
 
 	SubShader 
@@ -16,6 +17,7 @@ Shader "Custom/DepthObjectDebug"
 
 		sampler2D _MainTex;
 		fixed4 _Color;
+		float _Threshold;
 
 		struct Input 
 		{
@@ -35,7 +37,7 @@ Shader "Custom/DepthObjectDebug"
 		    OUT.Albedo = c.rgb;
 		    OUT.Alpha = c.a;
 
-		    if (IN.worldPos.y < -1.0)
+		    if (IN.worldPos.y < _Threshold)
 		    	discard;
 		}
 		ENDCG

@@ -34,7 +34,7 @@ public class Application : MonoBehaviour
         CopyCamera cc = ob.AddComponent<CopyCamera>();
         cc.Initialize(Camera.main);
 
-        OverlayCamera.cullingMask = 1 << LayerMask.NameToLayer("KinectBody");
+        OverlayCamera.cullingMask = 1 << LayerMask.NameToLayer("ShadowOverlay");
 
         planetoids = new List<Planetoid>();
 
@@ -51,7 +51,7 @@ public class Application : MonoBehaviour
 
             if (elapsedTime - lastSpawned > spawnDelay)
             {
-                if (planetoids.Count <= 8)
+                if (planetoids.Count <= -1)
                     SpawnPlanetoid(spawnVector);
                 lastSpawned = elapsedTime;
             }

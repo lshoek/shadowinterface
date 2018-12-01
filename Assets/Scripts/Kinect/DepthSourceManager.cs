@@ -22,6 +22,8 @@ public class DepthSourceManager : MonoBehaviour
             _Reader = _Sensor.DepthFrameSource.OpenReader();
             _Data = new ushort[_Sensor.DepthFrameSource.FrameDescription.LengthInPixels];
         }
+        FrameDescription fd = _Reader.DepthFrameSource.FrameDescription;
+        Debug.Log(string.Format("depth; wxh:bytespp {0}x{1}:{2}", fd.Width, fd.Height, fd.BytesPerPixel));
     }
     
     void Update () 
@@ -31,6 +33,7 @@ public class DepthSourceManager : MonoBehaviour
             var frame = _Reader.AcquireLatestFrame();
             if (frame != null)
             {
+    
                 frame.CopyFrameDataToArray(_Data);
                 frame.Dispose();
                 frame = null;
