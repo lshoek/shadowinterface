@@ -4,6 +4,7 @@ Shader "Custom/DepthCopy"
 	{
 		_MainTex ("Texture", 2D) = "white" {}
 		_Threshold ("Threshold", Float) = 0.33
+		_ShadowColor("_ShadowColor", Color) = (0,0,0,1)
 	}
 
 	SubShader
@@ -31,7 +32,9 @@ Shader "Custom/DepthCopy"
 
 			sampler2D _MainTex;
 			float4 _MainTex_ST;
+
 			float _Threshold;
+			fixed3 _ShadowColor;
 			
 			v2f vert (appdata v)
 			{
@@ -48,7 +51,7 @@ Shader "Custom/DepthCopy"
 				fixed alpha = ceil(inv(pct));
 				alpha = lerp(0, alpha, step(pct, _Threshold));
 
-				return fixed4(pct, pct, pct, alpha);
+				return fixed4(_ShadowColor, alpha);
 			}
 			ENDCG
 		}

@@ -136,6 +136,7 @@ public class DepthSourceView : MonoBehaviour
 
         depthRenderBuffer = RenderTexture.GetTemporary(depthRenderBufferDescriptor);
         depthCopyMaterial.SetFloat("_Threshold", depthShadowThreshold);
+        depthCopyMaterial.SetColor("_ShadowColor", Application.Instance.Palette.GUNMETAL);
         Graphics.Blit(depthTexture, depthRenderBuffer, depthCopyMaterial);
         shadowPlaneRenderer.material.mainTexture = depthRenderBuffer;
 

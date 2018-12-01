@@ -16,6 +16,8 @@ public class Application : MonoBehaviour
     public delegate void OnInitializedDelegate();
     public OnInitializedDelegate OnInitialized;
 
+    public ColorPalette Palette;
+
     float lastSpawned = 0.0f;
     float spawnDelay = 5.0f;
 
@@ -23,13 +25,12 @@ public class Application : MonoBehaviour
     {
         if (Instance == null)
             Instance = this;
-    }
 
-    void Start()
-    {
         GameObject ob = new GameObject("OverlayCamera");
         OverlayCamera = ob.AddComponent<Camera>();
         OverlayCamera.enabled = false;
+
+        Palette = gameObject.AddComponent<ColorPalette>();
 
         CopyCamera cc = ob.AddComponent<CopyCamera>();
         cc.Initialize(Camera.main);
