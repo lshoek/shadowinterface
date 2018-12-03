@@ -12,6 +12,8 @@ Shader "Custom/DepthObjectDebug"
 	    Tags { "RenderType"="Opaque" }
 	    LOD 200
 
+	   	Blend SrcAlpha OneMinusSrcAlpha
+
 		CGPROGRAM
 		#pragma surface surf Lambert vertex:vert
 
@@ -34,12 +36,19 @@ Shader "Custom/DepthObjectDebug"
 		void surf (Input IN, inout SurfaceOutput OUT) 
 		{
 		    fixed4 c = tex2D(_MainTex, IN.uv_MainTex) * _Color;
+		    //OUT.Emission = _Color.rgb;
 		    OUT.Albedo = c.rgb;
-		    OUT.Alpha = c.a;
+		    OUT.Alpha = 0.1;
 
 		    if (IN.worldPos.y < _Threshold)
 		    	discard;
 		}
+
+		fixed4 LightingNoLighting(SurfaceOutput s, fixed3 lightDir, fixed atten) 
+		{
+			return fixed4(0.0, 0.0, 0.0, 0.0); //half4(s.Albedo, s.Alpha);
+     	}
+
 		ENDCG
 	}
 
