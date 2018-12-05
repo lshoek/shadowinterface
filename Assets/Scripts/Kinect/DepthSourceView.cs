@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using System.Collections;
 using Windows.Kinect;
+using System.Collections.Generic;
 
 public enum DepthViewMode
 {
@@ -10,54 +11,69 @@ public enum DepthViewMode
 
 public class DepthSourceView : MonoBehaviour
 {
-    public DepthViewMode ViewMode = DepthViewMode.SeparateSourceReaders;
-    
-    public GameObject ColorSourceManager;
-    public GameObject DepthSourceManager;
-    public GameObject MultiSourceManager;
-    
-    private KinectSensor _Sensor;
-    private CoordinateMapper _Mapper;
-    private Mesh _Mesh;
-    private Vector3[] _Vertices;
-    private Vector2[] _UV;
-    private int[] _Triangles;
-    
-    // Only works at 4 right now
-    private const int _DownsampleSize = 4;
-    private const double _DepthScale = 0.1f;
-    private const int _Speed = 50;
-    
-    private MultiSourceManager _MultiManager;
-    private ColorSourceManager _ColorManager;
-    private DepthSourceManager _DepthManager;
+    public DepthSourceManager DepthSourceManager;
+
+    [Range(-10, 10)] [SerializeField] float meshColliderThreshold = -1.0f;
+    [Range(0, 1)] [SerializeField] float depthShadowThreshold = 0.33f;
+    [Range(1, 8000)] [SerializeField] int depthRange = 4000;
+
+    private KinectSensor sensor;
+    private CoordinateMapper mapper;
+    private Mesh mesh;
+    private Vector3[] verts;
+    private Vector2[] uv;
+    private int[] triangles;
+
+    private Material depthCopyMaterial;
+    private Material depthMeshMaterial;
+    private MeshCollider meshCollider;
+    private Texture2D depthTexture = null;
+
+    private Renderer shadowPlaneRenderer;
+    private RenderTexture depthRenderBuffer = null;
+    private RenderTextureDescriptor depthRenderBufferDescriptor;
+
+    private byte[] depthBitmapBuffer;
+
+    private const int downSampleSize = 8;
+    private const double depthScale = 0.1f;
+    private const int speed = 50;
 
     void Start()
     {
-        _Sensor = KinectSensor.GetDefault();
-        if (_Sensor != null)
+        meshCollider = GetComponent<MeshCollider>();
+        shadowPlaneRenderer = FindObjectOfType<ShadowOverlay>().GetComponent<Renderer>();
+
+        depthMeshMaterial = gameObject.GetComponent<Renderer>().material;
+        depthCopyMaterial = Resources.Load("Materials/DepthCopyMaterial") as Material;
+
+        sensor = KinectSensor.GetDefault();
+        if (sensor != null)
         {
-            _Mapper = _Sensor.CoordinateMapper;
-            var frameDesc = _Sensor.DepthFrameSource.FrameDescription;
+            mapper = sensor.CoordinateMapper;
+            FrameDescription frameDesc = sensor.DepthFrameSource.FrameDescription;
 
             // Downsample to lower resolution
-            CreateMesh(frameDesc.Width / _DownsampleSize, frameDesc.Height / _DownsampleSize);
+            CreateMesh(frameDesc.Width / downSampleSize, frameDesc.Height / downSampleSize);
 
-            if (!_Sensor.IsOpen)
+            if (!sensor.IsOpen)
             {
-                _Sensor.Open();
+                sensor.Open();
             }
+            depthRenderBufferDescriptor = new RenderTextureDescriptor(frameDesc.Width, frameDesc.Height, RenderTextureFormat.ARGB32, 0);
+            depthTexture = new Texture2D(frameDesc.Width, frameDesc.Height, TextureFormat.R8, false);
+            depthBitmapBuffer = new byte[frameDesc.LengthInPixels];
         }
     }
 
     void CreateMesh(int width, int height)
     {
-        _Mesh = new Mesh();
-        GetComponent<MeshFilter>().mesh = _Mesh;
+        mesh = new Mesh();
+        GetComponent<MeshFilter>().gameObject.GetComponent<MeshFilter>().mesh = mesh;
 
-        _Vertices = new Vector3[width * height];
-        _UV = new Vector2[width * height];
-        _Triangles = new int[6 * ((width - 1) * (height - 1))];
+        verts = new Vector3[width * height];
+        uv = new Vector2[width * height];
+        triangles = new int[6 * ((width - 1) * (height - 1))];
 
         int triangleIndex = 0;
         for (int y = 0; y < height; y++)
@@ -66,8 +82,8 @@ public class DepthSourceView : MonoBehaviour
             {
                 int index = (y * width) + x;
 
-                _Vertices[index] = new Vector3(x, -y, 0);
-                _UV[index] = new Vector2(((float)x / (float)width), ((float)y / (float)height));
+                verts[index] = new Vector3(x, -y, 0);
+                uv[index] = new Vector2((x/width), (y/height));
 
                 // Skip the last row/col
                 if (x != (width - 1) && y != (height - 1))
@@ -77,141 +93,90 @@ public class DepthSourceView : MonoBehaviour
                     int bottomLeft = topLeft + width;
                     int bottomRight = bottomLeft + 1;
 
-                    _Triangles[triangleIndex++] = topLeft;
-                    _Triangles[triangleIndex++] = topRight;
-                    _Triangles[triangleIndex++] = bottomLeft;
-                    _Triangles[triangleIndex++] = bottomLeft;
-                    _Triangles[triangleIndex++] = topRight;
-                    _Triangles[triangleIndex++] = bottomRight;
+                    triangles[triangleIndex++] = topLeft;
+                    triangles[triangleIndex++] = topRight;
+                    triangles[triangleIndex++] = bottomLeft;
+                    triangles[triangleIndex++] = bottomLeft;
+                    triangles[triangleIndex++] = topRight;
+                    triangles[triangleIndex++] = bottomRight;
                 }
             }
         }
-
-        _Mesh.vertices = _Vertices;
-        _Mesh.uv = _UV;
-        _Mesh.triangles = _Triangles;
-        _Mesh.RecalculateNormals();
-    }
-    
-    void OnGUI()
-    {
-        GUI.BeginGroup(new Rect(0, 0, Screen.width, Screen.height));
-        GUI.TextField(new Rect(Screen.width - 250 , 10, 250, 20), "DepthMode: " + ViewMode.ToString());
-        GUI.EndGroup();
+        mesh.vertices = verts;
+        mesh.uv = uv;
+        mesh.triangles = triangles;
+        mesh.RecalculateNormals();
     }
 
     void Update()
     {
-        if (_Sensor == null)
-        {
-            return;
-        }
-        
-        if (Input.GetButtonDown("Fire1"))
-        {
-            if(ViewMode == DepthViewMode.MultiSourceReader)
-            {
-                ViewMode = DepthViewMode.SeparateSourceReaders;
-            }
-            else
-            {
-                ViewMode = DepthViewMode.MultiSourceReader;
-            }
-        }
+        if (sensor == null) return;
         
         float yVal = Input.GetAxis("Horizontal");
         float xVal = -Input.GetAxis("Vertical");
 
-        transform.Rotate(
-            (xVal * Time.deltaTime * _Speed), 
-            (yVal * Time.deltaTime * _Speed), 
-            0, 
-            Space.Self);
+        transform.Rotate(xVal * Time.deltaTime * speed, yVal * Time.deltaTime * speed, 0, Space.Self);
             
-        if (ViewMode == DepthViewMode.SeparateSourceReaders)
+        if (DepthSourceManager.gameObject == null) return; 
+        if (DepthSourceManager == null) return;
+
+        ushort[] depthData = DepthSourceManager.GetData();
+
+        for (int i = 0; i < depthData.Length; i++)
         {
-            if (ColorSourceManager == null)
-            {
-                return;
-            }
-            
-            _ColorManager = ColorSourceManager.GetComponent<ColorSourceManager>();
-            if (_ColorManager == null)
-            {
-                return;
-            }
-            
-            if (DepthSourceManager == null)
-            {
-                return;
-            }
-            
-            _DepthManager = DepthSourceManager.GetComponent<DepthSourceManager>();
-            if (_DepthManager == null)
-            {
-                return;
-            }
-            
-            gameObject.GetComponent<Renderer>().material.mainTexture = _ColorManager.GetColorTexture();
-            RefreshData(_DepthManager.GetData(),
-                _ColorManager.ColorWidth,
-                _ColorManager.ColorHeight);
+            int v = depthData[i] * 255 / depthRange;
+            v = (v < 255) ? v : 255;
+            v = (v == 0) ? 255 : v;
+            byte value = (byte)(v);
+
+            depthBitmapBuffer[i] = value;
         }
-        else
-        {
-            if (MultiSourceManager == null)
-            {
-                return;
-            }
-            
-            _MultiManager = MultiSourceManager.GetComponent<MultiSourceManager>();
-            if (_MultiManager == null)
-            {
-                return;
-            }
-            
-            gameObject.GetComponent<Renderer>().material.mainTexture = _MultiManager.GetColorTexture();
-            
-            RefreshData(_MultiManager.GetDepthData(),
-                        _MultiManager.ColorWidth,
-                        _MultiManager.ColorHeight);
-        }
+        depthTexture.LoadRawTextureData(depthBitmapBuffer);
+        depthTexture.Apply();
+
+        depthRenderBuffer = RenderTexture.GetTemporary(depthRenderBufferDescriptor);
+        depthCopyMaterial.SetFloat("_Threshold", depthShadowThreshold);
+        depthCopyMaterial.SetColor("_ShadowColor", Application.Instance.Palette.GUNMETAL);
+        Graphics.Blit(depthTexture, depthRenderBuffer, depthCopyMaterial);
+        shadowPlaneRenderer.material.mainTexture = depthRenderBuffer;
+
+        depthMeshMaterial.SetFloat("_Threshold", meshColliderThreshold);
+
+        RefreshData(depthData); 
+        meshCollider.sharedMesh = mesh;
     }
-    
-    private void RefreshData(ushort[] depthData, int colorWidth, int colorHeight)
+
+    void OnPostRender()
     {
-        var frameDesc = _Sensor.DepthFrameSource.FrameDescription;
+        RenderTexture.ReleaseTemporary(depthRenderBuffer);
+    }
+
+    private void RefreshData(ushort[] depthData)
+    {
+        FrameDescription frameDesc = sensor.DepthFrameSource.FrameDescription;
         
-        ColorSpacePoint[] colorSpace = new ColorSpacePoint[depthData.Length];
-        _Mapper.MapDepthFrameToColorSpace(depthData, colorSpace);
-        
-        for (int y = 0; y < frameDesc.Height; y += _DownsampleSize)
+        for (int y = 0; y < frameDesc.Height; y += downSampleSize)
         {
-            for (int x = 0; x < frameDesc.Width; x += _DownsampleSize)
+            for (int x = 0; x < frameDesc.Width; x += downSampleSize)
             {
-                int indexX = x / _DownsampleSize;
-                int indexY = y / _DownsampleSize;
-                int smallIndex = (indexY * (frameDesc.Width / _DownsampleSize)) + indexX;
+                int idx = x / downSampleSize;
+                int idy = y / downSampleSize;
+                int smallIndex = (idy * (frameDesc.Width / downSampleSize)) + idx;
                 
-                double avg = GetAvg(depthData, x, y, frameDesc.Width, frameDesc.Height);
+                double avg = GetAvg(depthData, x, y, frameDesc.Width, frameDesc.Height, downSampleSize);
                 
-                avg = avg * _DepthScale;
+                avg = avg * depthScale;
                 
-                _Vertices[smallIndex].z = (float)avg;
-                
-                // Update UV mapping with CDRP
-                var colorSpacePoint = colorSpace[(y * frameDesc.Width) + x];
-                _UV[smallIndex] = new Vector2(colorSpacePoint.X / colorWidth, colorSpacePoint.Y / colorHeight);
+                verts[smallIndex].z = (float)avg;
             }
         }
-        
-        _Mesh.vertices = _Vertices;
-        _Mesh.uv = _UV;
-        _Mesh.triangles = _Triangles;
-        _Mesh.RecalculateNormals();
+        mesh.vertices = verts;
+        mesh.uv = uv;
+        mesh.triangles = triangles;
+        mesh.RecalculateNormals();
     }
     
-    private double GetAvg(ushort[] depthData, int x, int y, int width, int height)
+    private double GetAvg(ushort[] depthData, int x, int y, int width, int height, int dss)
     {
         double sum = 0.0;
         
@@ -225,28 +190,20 @@ public class DepthSourceView : MonoBehaviour
                     sum += 4500;
                 else
                     sum += depthData[fullIndex];
-                
             }
         }
-
         return sum / 16;
     }
 
     void OnApplicationQuit()
     {
-        if (_Mapper != null)
-        {
-            _Mapper = null;
-        }
-        
-        if (_Sensor != null)
-        {
-            if (_Sensor.IsOpen)
-            {
-                _Sensor.Close();
-            }
+        if (mapper != null)
+            mapper = null;
 
-            _Sensor = null;
+        if (sensor != null)
+        {
+            if (sensor.IsOpen) sensor.Close();
+            sensor = null;
         }
     }
 }

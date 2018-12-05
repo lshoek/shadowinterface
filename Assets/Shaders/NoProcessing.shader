@@ -1,6 +1,5 @@
 ﻿Shader "Custom/NoProcessing" 
 {
- 
 	Subshader 
 	{
 		Pass 

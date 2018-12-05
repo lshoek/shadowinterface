@@ -1,15 +1,13 @@
 ﻿using UnityEngine;
 using System.Collections.Generic;
 using Kinect = Windows.Kinect;
-using System;
 
 public class BodySourceView : MonoBehaviour 
 {
-    public Material BoneMaterial;
     public GameObject BodySourceManager;
     public Transform parentTransform;
 
-    [SerializeField] Material jointMaterial, boneMaterial;
+    private Material jointMaterial, boneMaterial;
     
     private Dictionary<ulong, GameObject> _Bodies = new Dictionary<ulong, GameObject>();
     private BodySourceManager _BodyManager;
@@ -138,7 +136,7 @@ public class BodySourceView : MonoBehaviour
         ob.AddComponent<CapsuleCollider>().height = 1000.0f;
 
         // always render on top
-        ob.layer = LayerMask.NameToLayer("KinectBody");
+        //ob.layer = LayerMask.NameToLayer("KinectBody");
         ob.GetComponent<Renderer>().material = jointMaterial;
 
         return ob;
@@ -159,7 +157,7 @@ public class BodySourceView : MonoBehaviour
         ob = UpdateBone(ob, source, dest);
 
         // always render on top
-        ob.layer = LayerMask.NameToLayer("KinectBody");
+        //ob.layer = LayerMask.NameToLayer("KinectBody");
         ob.GetComponent<Renderer>().material = boneMaterial;
 
         return ob;
