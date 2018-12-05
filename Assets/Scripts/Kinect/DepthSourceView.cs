@@ -13,7 +13,7 @@ public class DepthSourceView : MonoBehaviour
 {
     public DepthSourceManager DepthSourceManager;
 
-    [Range(-10, 10)] [SerializeField] float meshColliderThreshold = -1.0f;
+    [Range(-20, 10)] [SerializeField] float meshColliderThreshold = -1.0f;
     [Range(0, 1)] [SerializeField] float depthShadowThreshold = 0.33f;
     [Range(1, 8000)] [SerializeField] int depthRange = 4000;
 
@@ -24,13 +24,15 @@ public class DepthSourceView : MonoBehaviour
     private Vector2[] uv;
     private int[] triangles;
 
+    private Material blurMaterial;
     private Material depthCopyMaterial;
     private Material depthMeshMaterial;
     private MeshCollider meshCollider;
-    private Texture2D depthTexture = null;
+    private Texture2D depthTexture;
 
     private Renderer shadowPlaneRenderer;
-    private RenderTexture depthRenderBuffer = null;
+    private RenderTexture copyBuffer;
+    private RenderTexture depthRenderBuffer;
     private RenderTextureDescriptor depthRenderBufferDescriptor;
 
     private byte[] depthBitmapBuffer;
@@ -46,6 +48,7 @@ public class DepthSourceView : MonoBehaviour
 
         depthMeshMaterial = gameObject.GetComponent<Renderer>().material;
         depthCopyMaterial = Resources.Load("Materials/DepthCopyMaterial") as Material;
+        blurMaterial = Resources.Load("Materials/BlurMaterial") as Material;
 
         sensor = KinectSensor.GetDefault();
         if (sensor != null)
@@ -61,6 +64,8 @@ public class DepthSourceView : MonoBehaviour
                 sensor.Open();
             }
             depthRenderBufferDescriptor = new RenderTextureDescriptor(frameDesc.Width, frameDesc.Height, RenderTextureFormat.ARGB32, 0);
+            depthRenderBuffer = new RenderTexture(depthRenderBufferDescriptor);
+            copyBuffer = new RenderTexture(depthRenderBufferDescriptor);
             depthTexture = new Texture2D(frameDesc.Width, frameDesc.Height, TextureFormat.R8, false);
             depthBitmapBuffer = new byte[frameDesc.LengthInPixels];
         }
@@ -117,7 +122,7 @@ public class DepthSourceView : MonoBehaviour
 
         transform.Rotate(xVal * Time.deltaTime * speed, yVal * Time.deltaTime * speed, 0, Space.Self);
             
-        if (DepthSourceManager.gameObject == null) return; 
+        if (DepthSourceManager.gameObject == null) return;
         if (DepthSourceManager == null) return;
 
         ushort[] depthData = DepthSourceManager.GetData();
@@ -134,10 +139,10 @@ public class DepthSourceView : MonoBehaviour
         depthTexture.LoadRawTextureData(depthBitmapBuffer);
         depthTexture.Apply();
 
-        depthRenderBuffer = RenderTexture.GetTemporary(depthRenderBufferDescriptor);
         depthCopyMaterial.SetFloat("_Threshold", depthShadowThreshold);
-        depthCopyMaterial.SetColor("_ShadowColor", Application.Instance.Palette.GUNMETAL);
-        Graphics.Blit(depthTexture, depthRenderBuffer, depthCopyMaterial);
+        depthCopyMaterial.SetColor("_ShadowColor", Application.Instance.Palette.WHITESMOKE);
+        Graphics.Blit(depthTexture, copyBuffer, depthCopyMaterial);
+        Graphics.Blit(copyBuffer, depthRenderBuffer, blurMaterial);
         shadowPlaneRenderer.material.mainTexture = depthRenderBuffer;
 
         depthMeshMaterial.SetFloat("_Threshold", meshColliderThreshold);

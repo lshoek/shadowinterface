@@ -42,8 +42,8 @@ public class Application : MonoBehaviour
         if (OnInitialized != null)
             OnInitialized();
     }
-	
-	void Update()
+
+    void Update()
     {
         if (GravityBody != null)
         {
@@ -52,11 +52,20 @@ public class Application : MonoBehaviour
 
             if (elapsedTime - lastSpawned > spawnDelay)
             {
-                if (planetoids.Count <= -1)
+                if (planetoids.Count <= 16)
                     SpawnPlanetoid(spawnVector);
                 lastSpawned = elapsedTime;
             }
             //Debug.DrawLine(GravityBody.Position, spawnVector);
+        }
+    }
+
+    void OnGUI()
+    {
+        Event e = Event.current;
+        if (e.isKey && e.keyCode == KeyCode.R)
+        {
+            DespawnPlanetoids();
         }
     }
 
@@ -77,6 +86,12 @@ public class Application : MonoBehaviour
     {
         planetoids.Remove(poid);
         Destroy(poid.gameObject);
+    }
+
+    void DespawnPlanetoids()
+    {
+        foreach (Planetoid p in planetoids)
+            DespawnPlanetoid(p);
     }
     #endregion
 }
