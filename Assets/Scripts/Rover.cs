@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 public class Rover : MonoBehaviour {
 
-    public float speed = 20f;
+    public float speed = 2f;
 
     Rigidbody roverRb;
 
@@ -26,7 +26,6 @@ public class Rover : MonoBehaviour {
 
         roverRb.AddForce(perpdir);
 
-        Debug.Log(roverRb.velocity);
                  
         Debug.DrawLine(transform.position, transform.position + perpdir * 0.1f);
     }

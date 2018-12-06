@@ -56,7 +56,7 @@ public class Application : MonoBehaviour
                     SpawnPlanetoid(spawnVector);
                 lastSpawned = elapsedTime;
             }
-            Debug.DrawLine(GravityBody.Position, spawnVector);
+            //Debug.DrawLine(GravityBody.Position, spawnVector);
         }
     }
 
