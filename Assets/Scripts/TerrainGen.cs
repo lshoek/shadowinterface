@@ -37,7 +37,7 @@ public class TerrainGen : MonoBehaviour
         line.widthMultiplier = 0.2f;
 
         float elapsedTime = Time.time;
-        height = Random.Range(3.0f, 3.2f);
+        height = Random.Range(3.0f, 4.2f);
         Vector3 spawnVector = Application.Instance.GravityBody.Position + new Vector3(Mathf.Cos(elapsedTime), 0.0f, Mathf.Sin(elapsedTime)) * height;
         Debug.DrawLine(Application.Instance.GravityBody.Position, spawnVector);
 
@@ -110,8 +110,12 @@ public class TerrainGen : MonoBehaviour
         Vector3 offset = dst - src;
         Vector3 pos = src + offset * 0.5f;
 
+        angle = Mathf.Atan2(positions[counter].x - positions[counter + 1].x,positions[counter].z - positions[counter + 1].z) * Mathf.Rad2Deg;
+
         col.transform.position = pos;
-        col.transform.LookAt(src);
+        col.transform.rotation = Quaternion.Euler(0, angle-90, 0);
+
+        //col.transform.LookAt(src);
     }
 
 }
