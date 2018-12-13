@@ -26,6 +26,8 @@ public class Application : MonoBehaviour
         if (Instance == null)
             Instance = this;
 
+        UnityEngine.Application.targetFrameRate = 30;
+
         GameObject ob = new GameObject("OverlayCamera");
         OverlayCamera = ob.AddComponent<Camera>();
         OverlayCamera.enabled = false;
@@ -52,7 +54,7 @@ public class Application : MonoBehaviour
 
             if (elapsedTime - lastSpawned > spawnDelay)
             {
-                if (planetoids.Count <= 16)
+                if (planetoids.Count <= 4)
                     SpawnPlanetoid(spawnVector);
                 lastSpawned = elapsedTime;
             }
