@@ -2,13 +2,18 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class TerrainGen : MonoBehaviour {
-    
+public class TerrainGen : MonoBehaviour
+{
+
     public static int capturePoints = 46;
     public float height = 5.0f;
+    public float angle;
+    public float angleT;
+    public bool flip;
 
     private LineRenderer line;
     private BoxCollider col;
+    private GameObject temp;
 
     Vector3[] positions = new Vector3[capturePoints];
     int counter = 0;
@@ -16,27 +21,34 @@ public class TerrainGen : MonoBehaviour {
     float lastSpawned = 0.0f;
     float spawnDelay = 0.125f;
 
-	void Start () {
+    void Start()
+    {
         LineRenderer lineRenderer = gameObject.AddComponent<LineRenderer>();
         BoxCollider boxCollider = gameObject.AddComponent<BoxCollider>();
 
-	}
 
-	void Update () {
+    }
+
+    void Update()
+    {
         line = GetComponent<LineRenderer>();
         col = GetComponent<BoxCollider>();
         line.positionCount = capturePoints;
         line.widthMultiplier = 0.2f;
 
-
-
         float elapsedTime = Time.time;
-        height = Random.Range(2.0f,4.0f);
+        height = Random.Range(3.0f, 4.2f);
         Vector3 spawnVector = Application.Instance.GravityBody.Position + new Vector3(Mathf.Cos(elapsedTime), 0.0f, Mathf.Sin(elapsedTime)) * height;
         Debug.DrawLine(Application.Instance.GravityBody.Position, spawnVector);
 
+        Debug.Log(spawnVector.x);
 
-
+        if(spawnVector.z > 0){
+            flip = false;
+        }
+        else{
+            flip = true;
+        }
 
         if (elapsedTime - lastSpawned > spawnDelay)
         {
@@ -44,37 +56,66 @@ public class TerrainGen : MonoBehaviour {
             {
                 counter = 0;
             }
-            positions[counter] = new Vector3(spawnVector.x,spawnVector.y,spawnVector.z);
+
+            positions[counter] = new Vector3(spawnVector.x, spawnVector.y, spawnVector.z);
             counter++;
             AddColliderToLine();
-            //Debug.Log(positions[0]);
             lastSpawned = elapsedTime;
         }
 
-        for (int i = 0; i < capturePoints - 1; i++)
+        for (int i = 0; i < capturePoints; i++)
         {
-           Debug.DrawLine(positions[4], positions[5]);
             line.SetPositions(positions);
 
         }
-	}
+    }
+
+
+
+
+
+
 
     private void AddColliderToLine()
     {
+
         col.transform.parent = line.transform; // Collider is added as child object of line
 
-        float lineLength = Vector3.Distance(positions[4], positions[5]); // length of line
-        col.size = new Vector3(lineLength, 0.5f, 0.5f); // size of collider is set where X is length of line, Y is width of line, Z will be set as per requirement
-        Vector3 midPoint = (positions[4] + positions[5]) / 2;
+        float lineLength = Vector3.Distance(positions[counter], positions[counter + 1]); // length of line
+        col.size = new Vector3(lineLength, 0.2f, 0.2f); // size of collider is set where X is length of line, Y is width of line, Z will be set as per requirement
+        Vector3 midPoint = (positions[counter] + positions[counter + 1]) / 2;
         col.transform.position = midPoint; // setting position of collider object
+        col.center = new Vector3(0, 0, 0);
+
         // Following lines calculate the angle between startPos and endPos
-        float angle = (Mathf.Abs(positions[4].y - positions[4].y) / Mathf.Abs(positions[4].x - positions[5].x));
-        if ((positions[4].y < positions[5].y && positions[4].x > positions[5].x) || (positions[5].y < positions[4].y && positions[5].x > positions[4].x))
-        {
-            angle *= -1;
-        }
-        angle = Mathf.Rad2Deg * Mathf.Atan(angle);
-        col.transform.Rotate(angle, 0, 0);
+
+        //angle = (Mathf.Abs(positions[counter].z - positions[counter + 1].z) / Mathf.Abs(positions[counter].x - positions[counter + 1].x));
+        //if ((positions[counter].y < positions[counter + 1].y && positions[counter].x > positions[counter + 1].x) || (positions[counter + 1].y < positions[counter].y && positions[counter + 1].x > positions[counter].x))
+        //{
+        //    angle *= -1;
+        //}
+        //if (flip)
+        //{
+        //    angleT = Mathf.Rad2Deg * Mathf.Atan(angle);
+        //}
+
+        //else{
+        //    angleT = Mathf.Rad2Deg * Mathf.Tan(angle);
+        //}
+        //angleT = Mathf.Rad2Deg * Mathf.Atan2(Mathf.Abs(positions[counter].z - positions[counter + 1].z),Mathf.Abs(positions[counter].x - positions[counter + 1].x));
+        //col.transform.rotation = Quaternion.Euler(0, angleT, 0);
+
+        Vector3 src = positions[counter];
+        Vector3 dst = positions[counter + 1];
+        Vector3 offset = dst - src;
+        Vector3 pos = src + offset * 0.5f;
+
+        angle = Mathf.Atan2(positions[counter].x - positions[counter + 1].x,positions[counter].z - positions[counter + 1].z) * Mathf.Rad2Deg;
+
+        col.transform.position = pos;
+        col.transform.rotation = Quaternion.Euler(0, angle-90, 0);
+
+        //col.transform.LookAt(src);
     }
 
 }
