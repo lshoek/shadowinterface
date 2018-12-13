@@ -4,12 +4,18 @@ using UnityEngine;
 
 public class TerrainGen : MonoBehaviour
 {
-
-    public static int capturePoints = 46;
+    
+    public static int capturePoints = 50;
     public float height = 5.0f;
     public float angle;
-    public float angleT;
-    public bool flip;
+
+    float spawnAngle = 0;
+    float speedMult = 10;
+    float speed;
+    float x, y;
+
+    float lastSpawned = 0.0f;
+    float spawnDelay;
 
     private LineRenderer line;
     private BoxCollider col;
@@ -18,13 +24,14 @@ public class TerrainGen : MonoBehaviour
     Vector3[] positions = new Vector3[capturePoints];
     int counter = 0;
 
-    float lastSpawned = 0.0f;
-    float spawnDelay = 0.125f;
+
 
     void Start()
     {
         LineRenderer lineRenderer = gameObject.AddComponent<LineRenderer>();
         BoxCollider boxCollider = gameObject.AddComponent<BoxCollider>();
+        speed = (2 * Mathf.PI) / speedMult; //2*PI in degress is 360, so you get 10 seconds to complete a circle
+        spawnDelay = speedMult / capturePoints;
 
 
     }
@@ -34,33 +41,35 @@ public class TerrainGen : MonoBehaviour
         line = GetComponent<LineRenderer>();
         col = GetComponent<BoxCollider>();
         line.positionCount = capturePoints;
-        line.widthMultiplier = 0.2f;
+        line.widthMultiplier = 0.1f;
 
         float elapsedTime = Time.time;
         height = Random.Range(3.0f, 4.2f);
-        Vector3 spawnVector = Application.Instance.GravityBody.Position + new Vector3(Mathf.Cos(elapsedTime), 0.0f, Mathf.Sin(elapsedTime)) * height;
-        Debug.DrawLine(Application.Instance.GravityBody.Position, spawnVector);
 
-        Debug.Log(spawnVector.x);
+        spawnAngle += speed * Time.deltaTime; //if you want to switch direction, use -= instead of +=
 
-        if(spawnVector.z > 0){
-            flip = false;
-        }
-        else{
-            flip = true;
-        }
+        x = Mathf.Cos(spawnAngle) * height;
+        y = Mathf.Sin(spawnAngle) * height;
+        Vector3 spawnLoc = new Vector3(x, 0.0f, y);
+
+        Debug.Log(spawnDelay);
+        Debug.DrawLine(Application.Instance.GravityBody.Position, spawnLoc);
+        //Debug.Log("X: " + x + "Y: " + y);
+
 
         if (elapsedTime - lastSpawned > spawnDelay)
         {
-            if (counter > capturePoints - 1)
+            if (counter > capturePoints-1)
             {
                 counter = 0;
             }
 
-            positions[counter] = new Vector3(spawnVector.x, spawnVector.y, spawnVector.z);
+            positions[counter] = new Vector3(spawnLoc.x, spawnLoc.y, spawnLoc.z);
             counter++;
             AddColliderToLine();
             lastSpawned = elapsedTime;
+
+
         }
 
         for (int i = 0; i < capturePoints; i++)
@@ -69,9 +78,6 @@ public class TerrainGen : MonoBehaviour
 
         }
     }
-
-
-
 
 
 
@@ -89,22 +95,6 @@ public class TerrainGen : MonoBehaviour
 
         // Following lines calculate the angle between startPos and endPos
 
-        //angle = (Mathf.Abs(positions[counter].z - positions[counter + 1].z) / Mathf.Abs(positions[counter].x - positions[counter + 1].x));
-        //if ((positions[counter].y < positions[counter + 1].y && positions[counter].x > positions[counter + 1].x) || (positions[counter + 1].y < positions[counter].y && positions[counter + 1].x > positions[counter].x))
-        //{
-        //    angle *= -1;
-        //}
-        //if (flip)
-        //{
-        //    angleT = Mathf.Rad2Deg * Mathf.Atan(angle);
-        //}
-
-        //else{
-        //    angleT = Mathf.Rad2Deg * Mathf.Tan(angle);
-        //}
-        //angleT = Mathf.Rad2Deg * Mathf.Atan2(Mathf.Abs(positions[counter].z - positions[counter + 1].z),Mathf.Abs(positions[counter].x - positions[counter + 1].x));
-        //col.transform.rotation = Quaternion.Euler(0, angleT, 0);
-
         Vector3 src = positions[counter];
         Vector3 dst = positions[counter + 1];
         Vector3 offset = dst - src;
@@ -115,7 +105,6 @@ public class TerrainGen : MonoBehaviour
         col.transform.position = pos;
         col.transform.rotation = Quaternion.Euler(0, angle-90, 0);
 
-        //col.transform.LookAt(src);
     }
 
 }
