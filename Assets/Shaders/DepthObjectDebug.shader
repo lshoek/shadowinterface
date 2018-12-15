@@ -38,7 +38,7 @@ Shader "Custom/DepthObjectDebug"
 		    fixed4 c = tex2D(_MainTex, IN.uv_MainTex) * _Color;
 		    //OUT.Emission = _Color.rgb;
 		    OUT.Albedo = c.rgb;
-		    OUT.Alpha = 0.1;
+		    OUT.Alpha = 1.0;
 
 		    if (IN.worldPos.y < _Threshold)
 		    	discard;

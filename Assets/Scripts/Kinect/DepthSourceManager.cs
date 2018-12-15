@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using System.Collections;
 using Windows.Kinect;
+using System;
 
 public class DepthSourceManager : MonoBehaviour
 {   
@@ -29,9 +30,9 @@ public class DepthSourceManager : MonoBehaviour
         if (_Reader != null)
         {
             var frame = _Reader.AcquireLatestFrame();
+            
             if (frame != null)
             {
-    
                 frame.CopyFrameDataToArray(_Data);
                 frame.Dispose();
                 frame = null;

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 public class Rover : MonoBehaviour {
 
-    public float speed = 2f;
+    public float speed = 5f;
 
     Rigidbody roverRb;
 
@@ -13,6 +13,7 @@ public class Rover : MonoBehaviour {
     void Start()
     {
         roverRb = GetComponent<Rigidbody>();
+
     }
 
     void FixedUpdate()
@@ -22,12 +23,12 @@ public class Rover : MonoBehaviour {
 
         Vector3 offset = Application.Instance.GravityBody.Position - transform.position;
         Vector3 dir = offset / offset.sqrMagnitude * roverRb.mass * 2.0f;
-        Vector3 perpdir = Quaternion.AngleAxis(-90, Vector3.down) * Vector3.Normalize(dir) * speed;
+        Vector3 perpdir = Quaternion.AngleAxis(90, Vector3.down) * Vector3.Normalize(dir) * speed;
 
-        roverRb.AddForce(perpdir);
+        roverRb.AddForce(-perpdir);
 
                  
-        Debug.DrawLine(transform.position, transform.position + perpdir * 0.1f);
+        Debug.DrawLine(transform.position, transform.position + perpdir * 0.5f);
     }
 
 }
