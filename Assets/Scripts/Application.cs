@@ -6,6 +6,7 @@ public class Application : MonoBehaviour
 {
     public static Application Instance { get; private set; }
 
+    public Transform WorldParent;
     public PointGravity GravityBody;
 
     [HideInInspector] public Camera OverlayCamera;
@@ -27,6 +28,7 @@ public class Application : MonoBehaviour
             Instance = this;
 
         UnityEngine.Application.targetFrameRate = 30;
+        WorldParent = GameObject.FindGameObjectWithTag("WorldParent").transform;
 
         GameObject ob = new GameObject("OverlayCamera");
         OverlayCamera = ob.AddComponent<Camera>();
@@ -62,19 +64,11 @@ public class Application : MonoBehaviour
         }
     }
 
-    void OnGUI()
-    {
-        Event e = Event.current;
-        if (e.isKey && e.keyCode == KeyCode.R)
-        {
-            DespawnPlanetoids();
-        }
-    }
-
     #region "Planetoid Wrapper Methods"
     void SpawnPlanetoid(Vector3 position)
     {
         GameObject ob = Instantiate(Resources.Load("Prefabs/Planetoid") as GameObject);
+        ob.transform.SetParent(WorldParent);
         ob.name = string.Format("Planetoid{0}", planetoids.Count);
         ob.transform.position = position;
 

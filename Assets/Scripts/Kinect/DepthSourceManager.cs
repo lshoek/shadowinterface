@@ -1,7 +1,5 @@
 ﻿using UnityEngine;
-using System.Collections;
 using Windows.Kinect;
-using System;
 
 public class DepthSourceManager : MonoBehaviour
 {   
@@ -9,15 +7,22 @@ public class DepthSourceManager : MonoBehaviour
     private DepthFrameReader _Reader;
     private ushort[] _Data;
 
+    private bool updateSuccessful = false;
+
     public ushort[] GetData()
     {
         return _Data;
     }
 
+    public bool IsNewFrameAvailable()
+    {
+        return updateSuccessful;
+    }
+
     void Start () 
     {
         _Sensor = KinectSensor.GetDefault();
-        
+
         if (_Sensor != null) 
         {
             _Reader = _Sensor.DepthFrameSource.OpenReader();
@@ -33,9 +38,14 @@ public class DepthSourceManager : MonoBehaviour
             
             if (frame != null)
             {
+                updateSuccessful = true;
                 frame.CopyFrameDataToArray(_Data);
                 frame.Dispose();
                 frame = null;
+            }
+            else
+            {
+                updateSuccessful = false;
             }
         }
     }

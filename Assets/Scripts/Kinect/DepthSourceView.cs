@@ -10,36 +10,32 @@ public class DepthSourceView : MonoBehaviour
     [Range(-20, 10)] [SerializeField] float meshColliderThreshold = -1.0f;
     [Range(0, 1)] [SerializeField] float depthShadowThreshold = 0.33f;
     [Range(0, 0.1f)] [SerializeField] double depthRescale = 0.01;
-    [Range(0, 100)] [SerializeField] int speed = 50;
-    [Range(0, 1000)] [SerializeField] float contactOffset = 0.0f;
+    private int speed = 50;
 
     private const int DOWNSAMPLESIZE = 8;
     private const int MAX_DEPTH = 4500;
+    
+    private long lastFrameTime = 0;
 
     private KinectSensor sensor;
     private CoordinateMapper mapper;
     private Mesh mesh;
     private Vector3[] verts;
-    //private Vector2[] uv;
     private int[] triangles;
 
     private Material blurMaterial;
     private Material depthCopyMaterial;
     private Material depthMeshMaterial;
     private MeshCollider meshCollider;
-    public Texture2D depthTexture;
-
-    public Texture2D debugTexture;
 
     private Renderer shadowPlaneRenderer;
-    public RenderTexture copyBuffer;
-    public RenderTexture depthRenderBuffer;
+    private RenderTexture copyBuffer;
+    private RenderTexture depthRenderBuffer;
     private RenderTextureDescriptor depthRenderBufferDescriptor;
+    private Texture2D depthTexture;
 
     private ushort[] croppedDepthData;
     private byte[] depthBitmapBuffer;
-
-    private byte[] debugBitmapBuffer;
 
     private int croppedWidth;
     private int croppedHeight;
@@ -65,11 +61,8 @@ public class DepthSourceView : MonoBehaviour
             depthBitmapBuffer = new byte[fd.LengthInPixels];
             
             // use part of frame
-            croppedWidth = (int)(fd.Width*1.0f);
-            croppedHeight = (int)(fd.Height*1.0f);
-
-            debugBitmapBuffer = new byte[croppedWidth * croppedHeight];
-
+            croppedWidth = (int)(fd.Width * (fd.Height / (float)fd.Width) * (400.0f/fd.Height));
+            croppedHeight = (int)(fd.Height * (400.0f / fd.Height));
             Debug.Log(string.Format("origdepth:{0}x{1}, newdepth:{2}x{3}", fd.Width, fd.Height, croppedWidth, croppedHeight));
 
             // downsample to lower resolution
@@ -81,7 +74,6 @@ public class DepthSourceView : MonoBehaviour
             depthRenderBuffer = new RenderTexture(depthRenderBufferDescriptor);
             copyBuffer = new RenderTexture(depthRenderBufferDescriptor);
             depthTexture = new Texture2D(fd.Width, fd.Height, TextureFormat.R8, false);
-            debugTexture = new Texture2D(croppedWidth, croppedHeight, TextureFormat.R8, false);
         }
     }
 
@@ -91,7 +83,6 @@ public class DepthSourceView : MonoBehaviour
         GetComponent<MeshFilter>().gameObject.GetComponent<MeshFilter>().mesh = mesh;
 
         verts = new Vector3[width * height];
-        //uv = new Vector2[width * height];
         triangles = new int[6 * ((width - 1) * (height - 1))];
 
         int triangleIndex = 0;
@@ -102,7 +93,6 @@ public class DepthSourceView : MonoBehaviour
                 int index = (y * width) + x;
 
                 verts[index] = new Vector3(x, -y, 0);
-                //uv[index] = new Vector2((x/width), (y/height));
 
                 // Skip the last row/col
                 if (x != (width - 1) && y != (height - 1))
@@ -122,22 +112,15 @@ public class DepthSourceView : MonoBehaviour
             }
         }
         mesh.vertices = verts;
-        //mesh.uv = uv;
         mesh.triangles = triangles;
-        //mesh.RecalculateNormals();
     }
 
     void Update()
     {
         if (sensor == null) return;
-        
-        float yVal = Input.GetAxis("Horizontal");
-        float xVal = -Input.GetAxis("Vertical");
-
-        transform.Rotate(xVal * Time.deltaTime * speed, yVal * Time.deltaTime * speed, 0, Space.Self);
-            
         if (DepthSourceManager.gameObject == null) return;
         if (DepthSourceManager == null) return;
+        if (!DepthSourceManager.IsNewFrameAvailable()) return;
 
         ushort[] depthData = DepthSourceManager.GetData();
         for (int i = 0; i < depthData.Length; i++)
@@ -169,23 +152,8 @@ public class DepthSourceView : MonoBehaviour
             for (int x = 0; x < croppedWidth; x++)
                 croppedDepthData[y * croppedWidth + x] = depthData[(y * fd.Width) + (yOffset * fd.Width) + x + xOffset];
 
-        /// debug
-        //for (int i = 0; i < croppedDepthData.Length; i++)
-        //{
-        //    int v = (croppedDepthData[i] * 255 / MAX_DEPTH);
-        //    v = (v < 255) ? v : 255;
-        //    v = (v == 0) ? 255 : v;
-        //    byte value = (byte)(v);
-
-        //    debugBitmapBuffer[i] = value;
-        //}
-        //debugTexture.LoadRawTextureData(debugBitmapBuffer);
-        //debugTexture.Apply();
-        ///
-
         RefreshData(croppedDepthData);
         meshCollider.sharedMesh = mesh;
-        meshCollider.contactOffset = contactOffset;
     }
 
     private void RefreshData(ushort[] depthData)
@@ -209,9 +177,7 @@ public class DepthSourceView : MonoBehaviour
             }
         }
         mesh.vertices = verts;
-        //mesh.uv = uv;
         mesh.triangles = triangles;
-        //mesh.RecalculateNormals();
     }
     
     private double GetAvg(ushort[] depthData, int x, int y)
