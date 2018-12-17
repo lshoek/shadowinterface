@@ -28,7 +28,7 @@ public class Application : MonoBehaviour
         if (Instance == null)
             Instance = this;
 
-        UnityEngine.Application.targetFrameRate = 30;
+        UnityEngine.Application.targetFrameRate = 60;
         WorldParent = GameObject.FindGameObjectWithTag("WorldParent").transform;
         DepthManager = FindObjectOfType<DepthSourceManager>();
         if (DepthManager == null) Debug.Log("NULL");
