@@ -4,7 +4,7 @@ public class TerrainGen : MonoBehaviour
 {
     public GameObject ColliderParent;
 
-    const int MAX_COLLIDERS = 45;
+    const int MAX_COLLIDERS = 90;
 
     [SerializeField] float spawnTimeStep = 0.1f;
     [SerializeField] float capsuleWidth = 0.25f;
@@ -15,13 +15,17 @@ public class TerrainGen : MonoBehaviour
     CapsuleCollider[] colliders;
     Vector3[] positions = new Vector3[MAX_COLLIDERS];
 
-    int positionCounter = 0;
+    Vector2 direction;
+    Vector2 noiseStep;
 
-    public PhysicMaterial physicMaterial;
+    int positionCounter = 0;
 
     void Start()
     {
         colliders = new CapsuleCollider[MAX_COLLIDERS];
+
+        float randomAlpha = Random.value * Mathf.PI * 2f;
+        direction = new Vector2(Mathf.Cos(randomAlpha), Mathf.Sin(randomAlpha));
 
         for (int i = 0; i < MAX_COLLIDERS; i++)
         {
@@ -39,6 +43,7 @@ public class TerrainGen : MonoBehaviour
     void Update()
     {
         float elapsedTime = Time.time;
+        noiseStep = direction * elapsedTime * 2.0f;
 
         if (elapsedTime - timeLastSpawned > spawnTimeStep)
         {
@@ -64,7 +69,9 @@ public class TerrainGen : MonoBehaviour
     {
         index %= MAX_COLLIDERS;
 
-        float height = Random.Range(3.0f, 4.0f);
+        float turb = Mathf.PerlinNoise(noiseStep.x, noiseStep.y);
+        float height = Mathf.Lerp(3.0f, 4.0f, turb);
+
         spawnAngle = 2 * Mathf.PI * (index / (float)MAX_COLLIDERS);
 
         float x = Mathf.Cos(spawnAngle) * height;
