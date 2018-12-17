@@ -8,6 +8,7 @@ public class Application : MonoBehaviour
 
     public Transform WorldParent;
     public PointGravity GravityBody;
+    public DepthSourceManager DepthManager;
 
     [HideInInspector] public Camera OverlayCamera;
 
@@ -29,6 +30,8 @@ public class Application : MonoBehaviour
 
         UnityEngine.Application.targetFrameRate = 30;
         WorldParent = GameObject.FindGameObjectWithTag("WorldParent").transform;
+        DepthManager = FindObjectOfType<DepthSourceManager>();
+        if (DepthManager == null) Debug.Log("NULL");
 
         GameObject ob = new GameObject("OverlayCamera");
         OverlayCamera = ob.AddComponent<Camera>();

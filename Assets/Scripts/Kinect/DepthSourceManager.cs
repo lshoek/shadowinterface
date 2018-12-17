@@ -8,6 +8,12 @@ public class DepthSourceManager : MonoBehaviour
     private ushort[] _Data;
 
     private bool updateSuccessful = false;
+    private FrameDescription frameDescription;
+
+    public FrameDescription GetFrameDescription()
+    {
+        return frameDescription;
+    }
 
     public ushort[] GetData()
     {
@@ -22,6 +28,7 @@ public class DepthSourceManager : MonoBehaviour
     void Start () 
     {
         _Sensor = KinectSensor.GetDefault();
+        frameDescription = _Sensor.DepthFrameSource.FrameDescription;
 
         if (_Sensor != null) 
         {

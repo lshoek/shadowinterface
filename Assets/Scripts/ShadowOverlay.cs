@@ -2,6 +2,8 @@
 
 public class ShadowOverlay : MonoBehaviour
 {
+    private int frameWidth, frameHeight;
+
 	void Start()
     {
         gameObject.layer = LayerMask.NameToLayer("ShadowOverlay");
@@ -14,17 +16,12 @@ public class ShadowOverlay : MonoBehaviour
         transform.position = destPos;
 
         transform.parent.position = parentPos;
-    }
-	
-	void Update()
-    {
-        ScaleToAspect();
-	}
 
-    private void ScaleToAspect()
-    {
+        frameWidth = Application.Instance.DepthManager.GetFrameDescription().Width;
+        frameHeight = Application.Instance.DepthManager.GetFrameDescription().Height;
+
         Vector3 localScale = transform.localScale;
-        localScale.x = Camera.main.aspect * -1;
+        localScale.x = (frameWidth / (float)frameHeight) * -1.0f;
         transform.localScale = localScale;
     }
 }
