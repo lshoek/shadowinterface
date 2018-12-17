@@ -3,7 +3,8 @@ using System.Collections.Generic;
 
 public class Rover : MonoBehaviour {
 
-    public float speed = 5f;
+    [SerializeField] float speed = 100f;
+    [SerializeField] float maxSpeed = 1f;
 
     Rigidbody roverRb;
 
@@ -25,6 +26,10 @@ public class Rover : MonoBehaviour {
         roverRb.AddForce(-perpdir);
 
         Debug.DrawLine(transform.position, transform.position + perpdir * 0.5f);
+
+        roverRb.velocity = Vector3.ClampMagnitude(roverRb.velocity, maxSpeed);
+
+
     }
 
 }
