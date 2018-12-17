@@ -53,6 +53,14 @@ public class TerrainGenerator : MonoBehaviour
 
             UpdateTerrainSegment(positionCounter);
             timeLastSpawned = elapsedTime;
+
+            for (int i = 0; i < NUM_POINTS; i++)
+            {
+                bool b = (i < positionCounter + 20 && i > positionCounter - 20);
+                
+                bones[i].gameObject.SetActive(b);
+                joints[i].gameObject.SetActive(b);
+            }
         }
     }
     private SphereCollider InitJoint()

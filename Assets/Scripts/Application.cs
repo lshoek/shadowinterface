@@ -63,8 +63,12 @@ public class Application : MonoBehaviour
                     SpawnPlanetoid(spawnVector);
                 lastSpawned = elapsedTime;
             }
-            //Debug.DrawLine(GravityBody.Position, spawnVector);
         }
+    }
+
+    public void GameOver()
+    {
+        // something 
     }
 
     #region "Planetoid Wrapper Methods"
