@@ -59,8 +59,8 @@ public class Application : MonoBehaviour
 
             if (elapsedTime - lastSpawned > spawnDelay)
             {
-                if (planetoids.Count <= 0)
-                    //SpawnPlanetoid(spawnVector);
+                if (planetoids.Count < 4)
+                    SpawnPlanetoid(spawnVector);
                 lastSpawned = elapsedTime;
             }
             //Debug.DrawLine(GravityBody.Position, spawnVector);
