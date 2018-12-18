@@ -2,18 +2,20 @@
 
 public class TerrainGenerator : MonoBehaviour
 {
-    public GameObject BoneParent;
-    public GameObject JointParent;
-
-    const int NUM_POINTS = 90;
-
-    [SerializeField] float spawnTimeStep = 0.1f;
-    [SerializeField] float terrainWidth = 0.25f;
+    [SerializeField] float terrainWidth = 0.3f;
+    [SerializeField] [Range(1.0f, 30.0f)] float circulationTime = 10.0f;
+    [SerializeField] [Range(0.0f, 10.0f)] float noiseMultiplier = 1.5f;
+    [SerializeField] [Range(0.0f, 1.0f)] float terrainSize = 0.33f;
     [SerializeField] [Range(0.0f, 10.0f)] float minHeight = 3.0f;
     [SerializeField] [Range(0.0f, 10.0f)] float maxHeight = 3.5f;
 
-    float spawnAngle = 0.0f;
+    Transform BoneParent;
+    Transform JointParent;
+
+    const int NUM_POINTS = 90;
+
     float timeLastSpawned = 0.0f;
+    float spawnTimeStep;
 
     CapsuleCollider[] bones;
     SphereCollider[] joints;
@@ -22,10 +24,15 @@ public class TerrainGenerator : MonoBehaviour
     Vector2 direction;
     Vector2 noiseStep;
 
+    float highPrecisionPosition = 0;
     int positionCounter = 0;
+    int prevPositionCounter = 0;
 
     void Start()
     {
+        BoneParent = GameObject.FindGameObjectWithTag("BoneParent").transform;
+        JointParent = GameObject.FindGameObjectWithTag("JointParent").transform;
+
         bones = new CapsuleCollider[NUM_POINTS];
         joints = new SphereCollider[NUM_POINTS];
 
@@ -43,31 +50,39 @@ public class TerrainGenerator : MonoBehaviour
     void Update()
     {
         float elapsedTime = Time.time;
-        noiseStep = direction * elapsedTime * 2.0f;
+        noiseStep = direction * elapsedTime * noiseMultiplier;
 
-        if (elapsedTime - timeLastSpawned > spawnTimeStep)
+        highPrecisionPosition = elapsedTime % circulationTime / circulationTime;
+        positionCounter = (int)Mathf.Lerp(0, NUM_POINTS, highPrecisionPosition);
+       
+        if (positionCounter != prevPositionCounter)
         {
-            positionCounter++;
             positionCounter %= NUM_POINTS;
             positions[positionCounter] = GetNewLocation(positionCounter);
 
             UpdateTerrainSegment(positionCounter);
             timeLastSpawned = elapsedTime;
 
+            int numVisiblePoints = (int)(NUM_POINTS * terrainSize);
+            int leftBound = (positionCounter - numVisiblePoints + NUM_POINTS) % NUM_POINTS;
+            int leftBoundEdge = (positionCounter + 1 - numVisiblePoints + NUM_POINTS) % NUM_POINTS;
+
             for (int i = 0; i < NUM_POINTS; i++)
             {
-                bool b = (i < positionCounter + 20 && i > positionCounter - 20);
-                
+                bool b = (positionCounter < numVisiblePoints) ? (i > leftBound | i < positionCounter) : (i < positionCounter && i > leftBound);
                 bones[i].gameObject.SetActive(b);
                 joints[i].gameObject.SetActive(b);
             }
+            bones[leftBoundEdge].gameObject.SetActive(false);
+
+            prevPositionCounter = positionCounter;
         }
     }
     private SphereCollider InitJoint()
     {
         SphereCollider joint = GameObject.CreatePrimitive(PrimitiveType.Sphere).GetComponent<SphereCollider>();
 
-        joint.transform.SetParent(JointParent.transform);
+        joint.transform.SetParent(JointParent);
         joint.transform.localScale *= terrainWidth;
         joint.material = Resources.Load("Resources/Materials/Physic/TerrainPhysicMaterial") as PhysicMaterial;
         joint.center = Vector3.zero;
@@ -78,7 +93,7 @@ public class TerrainGenerator : MonoBehaviour
     {
         CapsuleCollider bone = GameObject.CreatePrimitive(PrimitiveType.Cylinder).GetComponent<CapsuleCollider>();
 
-        bone.transform.SetParent(BoneParent.transform);
+        bone.transform.SetParent(BoneParent);
         bone.transform.localScale *= terrainWidth;
         bone.material = Resources.Load("Resources/Materials/Physic/TerrainPhysicMaterial") as PhysicMaterial;
         bone.center = Vector3.zero;
@@ -101,7 +116,7 @@ public class TerrainGenerator : MonoBehaviour
         float turb = Mathf.PerlinNoise(noiseStep.x, noiseStep.y);
         float height = Mathf.Lerp(minHeight, maxHeight, turb);
 
-        spawnAngle = 2 * Mathf.PI * (index / (float)NUM_POINTS);
+        float spawnAngle = 2 * Mathf.PI * (index / (float)NUM_POINTS);
 
         float x = Mathf.Cos(spawnAngle) * height;
         float y = Mathf.Sin(spawnAngle) * height;
@@ -125,5 +140,10 @@ public class TerrainGenerator : MonoBehaviour
         bone.transform.rotation = Quaternion.Euler(90.0f, (Mathf.Atan2(prev.x - current.x, prev.z - current.z) * Mathf.Rad2Deg), 0);
 
         joint.transform.position = current;
+    }
+
+    public float GetSmoothAngle()
+    {
+        return 2 * Mathf.PI * highPrecisionPosition;
     }
 }
