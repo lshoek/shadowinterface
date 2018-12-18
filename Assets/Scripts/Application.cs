@@ -1,24 +1,36 @@
 ﻿using Assets.Scripts;
+using System;
+using System.Collections;
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 
 public class Application : MonoBehaviour
 {
     public static Application Instance { get; private set; }
 
-    public Transform WorldParent;
-    public PointGravity GravityBody;
-    public DepthSourceManager DepthManager;
-
+    [HideInInspector] public PointGravity GravityBody;
+    [HideInInspector] public Transform WorldParent;
+    [HideInInspector] public DepthSourceManager DepthManager;
+    [HideInInspector] public TerrainGenerator Generator;
+    [HideInInspector] public ColorPalette Palette;
     [HideInInspector] public Camera OverlayCamera;
 
+    public TextMeshPro ScoreTextMesh;
+
     // should be a smart list implementation managing list indices and avoiding the retrieval of null references
-    private List<Planetoid> planetoids;
+    List<Planetoid> planetoids;
 
     public delegate void OnInitializedDelegate();
     public OnInitializedDelegate OnInitialized;
 
-    public ColorPalette Palette;
+    public delegate void OnGameStartedDelegate();
+    public OnGameStartedDelegate OnGameStarted;
+
+    bool isRunning = false;
+
+    float startTime = 0.0f;
+    float survivalTime = 0.0f;
 
     float lastSpawned = 0.0f;
     float spawnDelay = 5.0f;
@@ -30,8 +42,12 @@ public class Application : MonoBehaviour
 
         UnityEngine.Application.targetFrameRate = 60;
         WorldParent = GameObject.FindGameObjectWithTag("WorldParent").transform;
+
+        GravityBody = FindObjectOfType<PointGravity>();
         DepthManager = FindObjectOfType<DepthSourceManager>();
-        if (DepthManager == null) Debug.Log("NULL");
+        Generator = FindObjectOfType<TerrainGenerator>();
+
+        ScoreTextMesh.gameObject.SetActive(false);
 
         GameObject ob = new GameObject("OverlayCamera");
         OverlayCamera = ob.AddComponent<Camera>();
@@ -46,29 +62,58 @@ public class Application : MonoBehaviour
 
         planetoids = new List<Planetoid>();
 
+        OnGameStarted += delegate
+        {
+            StartCoroutine(GameLoop());
+        };
+
         if (OnInitialized != null)
             OnInitialized();
+
+        StartGame();
     }
 
     void Update()
     {
-        if (GravityBody != null)
-        {
-            float elapsedTime = Time.time;
-            Vector3 spawnVector = GravityBody.Position + new Vector3(Mathf.Cos(elapsedTime), 0.0f, Mathf.Sin(elapsedTime)) * 10.0f;
+        float elapsedTime = Time.time;
+        Vector3 spawnVector = GravityBody.Position + new Vector3(Mathf.Cos(elapsedTime), 0.0f, Mathf.Sin(elapsedTime)) * 10.0f;
 
-            if (elapsedTime - lastSpawned > spawnDelay)
-            {
-                if (planetoids.Count < 0)
-                    SpawnPlanetoid(spawnVector);
-                lastSpawned = elapsedTime;
-            }
+        if (elapsedTime - lastSpawned > spawnDelay)
+        {
+            if (planetoids.Count < 0)
+                SpawnPlanetoid(spawnVector);
+            lastSpawned = elapsedTime;
         }
+
+        survivalTime = elapsedTime - startTime;
+        TimeSpan timeFormat = TimeSpan.FromSeconds(survivalTime);
+        ScoreTextMesh.text = string.Format("{0:00}:{1:00}:{2:000}", timeFormat.Minutes, timeFormat.Seconds, timeFormat.Milliseconds);
+
+        ScoreTextMesh.rectTransform.pivot = new Vector2(0.0f, -4.5f);
+        //ScoreTextMesh.rectTransform. = new Vector2(0.5f, 1.0f);
+        ScoreTextMesh.transform.rotation = Quaternion.Euler(new Vector3(90.0f, -Generator.GetSmoothAngle() * Mathf.Rad2Deg+90, 0.0f));
+    }
+
+    private IEnumerator GameLoop()
+    {
+        yield return null;
+    }
+
+    public bool IsRunning()
+    {
+        return isRunning;
+    }
+
+    public void StartGame()
+    {
+        ScoreTextMesh.gameObject.SetActive(true);
+        startTime = Time.time;
+        isRunning = true;
     }
 
     public void GameOver()
     {
-        // something 
+        isRunning = false;
     }
 
     #region "Planetoid Wrapper Methods"
