@@ -14,9 +14,6 @@ public class TerrainGenerator : MonoBehaviour
 
     const int NUM_POINTS = 90;
 
-    float timeLastSpawned = 0.0f;
-    float spawnTimeStep;
-
     CapsuleCollider[] bones;
     SphereCollider[] joints;
     Vector3[] positions = new Vector3[NUM_POINTS];
@@ -24,7 +21,12 @@ public class TerrainGenerator : MonoBehaviour
     Vector2 direction;
     Vector2 noiseStep;
 
+    bool isRunning = false; 
+
     float highPrecisionPosition = 0;
+    float timeLastSpawned = 0.0f;
+    float spawnTimeStep;
+
     int positionCounter = 0;
     int prevPositionCounter = 0;
 
@@ -36,9 +38,6 @@ public class TerrainGenerator : MonoBehaviour
         bones = new CapsuleCollider[NUM_POINTS];
         joints = new SphereCollider[NUM_POINTS];
 
-        float randomAlpha = Random.value * Mathf.PI * 2f;
-        direction = new Vector2(Mathf.Cos(randomAlpha), Mathf.Sin(randomAlpha));
-
         for (int i = 0; i < NUM_POINTS; i++)
         {
             bones[i] = InitBone();
@@ -49,6 +48,8 @@ public class TerrainGenerator : MonoBehaviour
 
     void Update()
     {
+        if (!isRunning) return;
+        
         float elapsedTime = Time.time;
         noiseStep = direction * elapsedTime * noiseMultiplier;
 
@@ -78,6 +79,7 @@ public class TerrainGenerator : MonoBehaviour
             prevPositionCounter = positionCounter;
         }
     }
+
     private SphereCollider InitJoint()
     {
         SphereCollider joint = GameObject.CreatePrimitive(PrimitiveType.Sphere).GetComponent<SphereCollider>();
@@ -102,6 +104,9 @@ public class TerrainGenerator : MonoBehaviour
 
     private void InitTerrain()
     {
+        float randomAlpha = Random.value * Mathf.PI * 2f;
+        direction = new Vector2(Mathf.Cos(randomAlpha), Mathf.Sin(randomAlpha));
+
         for (int i = 0; i < NUM_POINTS; i++)
             positions[i] = GetNewLocation(i);
 
@@ -145,5 +150,15 @@ public class TerrainGenerator : MonoBehaviour
     public float GetSmoothAngle()
     {
         return 2 * Mathf.PI * highPrecisionPosition;
+    }
+
+    public void StartGeneration()
+    {
+        isRunning = true;
+    }
+
+    public void StopGeneration()
+    {
+        isRunning = false;
     }
 }

@@ -13,21 +13,22 @@ public class Application : MonoBehaviour
     [HideInInspector] public Transform WorldParent;
     [HideInInspector] public DepthSourceManager DepthManager;
     [HideInInspector] public TerrainGenerator Generator;
+    [HideInInspector] public PlayfieldWatcher Watcher;
     [HideInInspector] public ColorPalette Palette;
     [HideInInspector] public Camera OverlayCamera;
 
     public TextMeshPro ScoreTextMesh;
 
+    public enum GameState
+    {
+        IDLE,
+        RUNNING,
+        GAMEOVER
+    }
+    public GameState State { get; private set; }
+
     // should be a smart list implementation managing list indices and avoiding the retrieval of null references
     List<Planetoid> planetoids;
-
-    public delegate void OnInitializedDelegate();
-    public OnInitializedDelegate OnInitialized;
-
-    public delegate void OnGameStartedDelegate();
-    public OnGameStartedDelegate OnGameStarted;
-
-    bool isRunning = false;
 
     float startTime = 0.0f;
     float survivalTime = 0.0f;
@@ -40,12 +41,14 @@ public class Application : MonoBehaviour
         if (Instance == null)
             Instance = this;
 
+        State = GameState.IDLE;
         UnityEngine.Application.targetFrameRate = 60;
         WorldParent = GameObject.FindGameObjectWithTag("WorldParent").transform;
 
         GravityBody = FindObjectOfType<PointGravity>();
         DepthManager = FindObjectOfType<DepthSourceManager>();
         Generator = FindObjectOfType<TerrainGenerator>();
+        Watcher = FindObjectOfType<PlayfieldWatcher>();
 
         ScoreTextMesh.gameObject.SetActive(false);
 
@@ -62,15 +65,10 @@ public class Application : MonoBehaviour
 
         planetoids = new List<Planetoid>();
 
-        OnGameStarted += delegate
-        {
-            StartCoroutine(GameLoop());
-        };
+        Watcher.OnPlayfieldOccupied += delegate { StartGame(); };
+        Watcher.OnPlayfieldEmpty += delegate { GameOver(); };
 
-        if (OnInitialized != null)
-            OnInitialized();
-
-        StartGame();
+        //StartGame();
     }
 
     void Update()
@@ -85,35 +83,34 @@ public class Application : MonoBehaviour
             lastSpawned = elapsedTime;
         }
 
-        survivalTime = elapsedTime - startTime;
-        TimeSpan timeFormat = TimeSpan.FromSeconds(survivalTime);
-        ScoreTextMesh.text = string.Format("{0:00}:{1:00}:{2:000}", timeFormat.Minutes, timeFormat.Seconds, timeFormat.Milliseconds);
+        if (State == GameState.RUNNING)
+        {
+            survivalTime = elapsedTime - startTime;
+            TimeSpan timeFormat = TimeSpan.FromSeconds(survivalTime);
+            ScoreTextMesh.text = string.Format("{0:00}:{1:00}:{2:000}", timeFormat.Minutes, timeFormat.Seconds, timeFormat.Milliseconds);
 
-        ScoreTextMesh.rectTransform.pivot = new Vector2(0.0f, -4.5f);
-        //ScoreTextMesh.rectTransform. = new Vector2(0.5f, 1.0f);
-        ScoreTextMesh.transform.rotation = Quaternion.Euler(new Vector3(90.0f, -Generator.GetSmoothAngle() * Mathf.Rad2Deg+90, 0.0f));
-    }
-
-    private IEnumerator GameLoop()
-    {
-        yield return null;
-    }
-
-    public bool IsRunning()
-    {
-        return isRunning;
+            ScoreTextMesh.rectTransform.pivot = new Vector2(0.0f, -4.5f);
+            ScoreTextMesh.transform.rotation = Quaternion.Euler(new Vector3(90.0f, -Generator.GetSmoothAngle() * Mathf.Rad2Deg + 90, 0.0f));
+        }
+        else if (State == GameState.GAMEOVER)
+        {
+            // game has stopped, ask user to leave playfield
+        }
     }
 
     public void StartGame()
     {
         ScoreTextMesh.gameObject.SetActive(true);
         startTime = Time.time;
-        isRunning = true;
+
+        State = GameState.RUNNING;
+        Generator.StartGeneration();
     }
 
     public void GameOver()
     {
-        isRunning = false;
+        State = GameState.GAMEOVER;
+        Generator.StopGeneration();
     }
 
     #region "Planetoid Wrapper Methods"
