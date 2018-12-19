@@ -18,6 +18,7 @@ public class Application : MonoBehaviour
     [HideInInspector] public Camera OverlayCamera;
 
     public TextMeshPro ScoreTextMesh;
+    public Animator Shoeprints;
 
     public enum GameState
     {
@@ -25,9 +26,10 @@ public class Application : MonoBehaviour
         RUNNING,
         GAMEOVER
     }
+    private GameState state;
     public GameState State
     {
-        get { return State; }
+        get { return state; }
         private set
         {
             if (value == GameState.IDLE)
@@ -45,7 +47,7 @@ public class Application : MonoBehaviour
                 Watcher.OnPlayfieldEmpty = delegate { Idle(); };
                 Watcher.OnPlayfieldOccupied = null;
             }
-            State = value;
+            state = value;
         }
     }
 
@@ -63,14 +65,14 @@ public class Application : MonoBehaviour
         if (Instance == null)
             Instance = this;
 
-        State = GameState.IDLE;
-        UnityEngine.Application.targetFrameRate = 60;
         WorldParent = GameObject.FindGameObjectWithTag("WorldParent").transform;
-
         GravityBody = FindObjectOfType<PointGravity>();
         DepthManager = FindObjectOfType<DepthSourceManager>();
         Generator = FindObjectOfType<TerrainGenerator>();
         Watcher = FindObjectOfType<PlayfieldWatcher>();
+
+        UnityEngine.Application.targetFrameRate = 60;
+        Idle();
 
         ScoreTextMesh.gameObject.SetActive(false);
 
@@ -87,7 +89,7 @@ public class Application : MonoBehaviour
 
         planetoids = new List<Planetoid>();
 
-        //StartGame();
+        StartGame();
     }
 
     void Update()
@@ -117,6 +119,8 @@ public class Application : MonoBehaviour
     {
         State = GameState.IDLE;
         ScoreTextMesh.gameObject.SetActive(false);
+
+        Shoeprints.Play("FadeIn");
     }
 
     public void StartGame()
@@ -126,6 +130,8 @@ public class Application : MonoBehaviour
 
         ScoreTextMesh.gameObject.SetActive(true);
         startTime = Time.time;
+
+        Shoeprints.Play("FadeOut");
     }
 
     public void StopGame()
