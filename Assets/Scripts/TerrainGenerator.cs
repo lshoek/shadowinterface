@@ -24,7 +24,6 @@ public class TerrainGenerator : MonoBehaviour
     bool isRunning = false; 
 
     float highPrecisionPosition = 0;
-    float timeLastSpawned = 0.0f;
     float spawnTimeStep;
 
     int positionCounter = 0;
@@ -62,7 +61,6 @@ public class TerrainGenerator : MonoBehaviour
             positions[positionCounter] = GetNewLocation(positionCounter);
 
             UpdateTerrainSegment(positionCounter);
-            timeLastSpawned = elapsedTime;
 
             int numVisiblePoints = (int)(NUM_POINTS * terrainSize);
             int leftBound = (positionCounter - numVisiblePoints + NUM_POINTS) % NUM_POINTS;

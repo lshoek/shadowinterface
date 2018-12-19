@@ -25,9 +25,31 @@ public class Application : MonoBehaviour
         RUNNING,
         GAMEOVER
     }
-    public GameState State { get; private set; }
+    public GameState State
+    {
+        get { return State; }
+        private set
+        {
+            if (value == GameState.IDLE)
+            {
+                Watcher.OnPlayfieldEmpty = null;
+                Watcher.OnPlayfieldOccupied = delegate { StartGame(); };
+            }
+            else if (value == GameState.RUNNING)
+            {
+                Watcher.OnPlayfieldEmpty = delegate { StopGame(); };
+                Watcher.OnPlayfieldOccupied = null;
+            }
+            else if (value == GameState.GAMEOVER)
+            {
+                Watcher.OnPlayfieldEmpty = delegate { Idle(); };
+                Watcher.OnPlayfieldOccupied = null;
+            }
+            State = value;
+        }
+    }
 
-    // should be a smart list implementation managing list indices and avoiding the retrieval of null references
+    // likely getting rid of this which is good
     List<Planetoid> planetoids;
 
     float startTime = 0.0f;
@@ -65,9 +87,6 @@ public class Application : MonoBehaviour
 
         planetoids = new List<Planetoid>();
 
-        Watcher.OnPlayfieldOccupied += delegate { StartGame(); };
-        Watcher.OnPlayfieldEmpty += delegate { GameOver(); };
-
         //StartGame();
     }
 
@@ -92,22 +111,24 @@ public class Application : MonoBehaviour
             ScoreTextMesh.rectTransform.pivot = new Vector2(0.0f, -4.5f);
             ScoreTextMesh.transform.rotation = Quaternion.Euler(new Vector3(90.0f, -Generator.GetSmoothAngle() * Mathf.Rad2Deg + 90, 0.0f));
         }
-        else if (State == GameState.GAMEOVER)
-        {
-            // game has stopped, ask user to leave playfield
-        }
+    }
+
+    private void Idle()
+    {
+        State = GameState.IDLE;
+        ScoreTextMesh.gameObject.SetActive(false);
     }
 
     public void StartGame()
     {
-        ScoreTextMesh.gameObject.SetActive(true);
-        startTime = Time.time;
-
         State = GameState.RUNNING;
         Generator.StartGeneration();
+
+        ScoreTextMesh.gameObject.SetActive(true);
+        startTime = Time.time;
     }
 
-    public void GameOver()
+    public void StopGame()
     {
         State = GameState.GAMEOVER;
         Generator.StopGeneration();

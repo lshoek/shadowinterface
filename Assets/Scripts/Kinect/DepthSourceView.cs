@@ -10,12 +10,9 @@ public class DepthSourceView : MonoBehaviour
     [Range(-20, 10)] [SerializeField] float meshColliderThreshold = -1.0f;
     [Range(0, 1)] [SerializeField] float depthShadowThreshold = 0.33f;
     [Range(0, 0.1f)] [SerializeField] double depthRescale = 0.01;
-    private int speed = 50;
 
     private const int DOWNSAMPLESIZE = 8;
     private const int MAX_DEPTH = 4500;
-    
-    private long lastFrameTime = 0;
 
     private KinectSensor sensor;
     private CoordinateMapper mapper;

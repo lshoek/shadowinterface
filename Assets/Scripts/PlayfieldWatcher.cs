@@ -1,23 +1,25 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 
 public class PlayfieldWatcher : MonoBehaviour
 {
     [SerializeField] float PlayfieldTimeout = 2.0f;
 
-    public delegate void OnPlayfieldOccupiedDelegate();
-    public OnPlayfieldOccupiedDelegate OnPlayfieldOccupied;
+    public delegate void PlayfieldOccupiedDelegate();
+    public PlayfieldOccupiedDelegate OnPlayfieldOccupied;
 
-    public delegate void OnPlayfieldEmptyDelegate();
-    public OnPlayfieldEmptyDelegate OnPlayfieldEmpty;
+    public delegate void PlayfieldEmptyDelegate();
+    public PlayfieldEmptyDelegate OnPlayfieldEmpty;
 
     private float lastCollisionTime = 0.0f;
     private bool userInPlayfield = false;
 
     void Update()
     {
-        if (userInPlayfield && Time.time - lastCollisionTime > PlayfieldTimeout)
+        float elapsedTime = Time.time;
+        if (userInPlayfield && elapsedTime - lastCollisionTime > PlayfieldTimeout)
         {
-            OnPlayfieldEmpty();
+            if (OnPlayfieldEmpty != null) OnPlayfieldEmpty.Invoke();
             userInPlayfield = false;
         }
     }
@@ -30,9 +32,9 @@ public class PlayfieldWatcher : MonoBehaviour
         // don't do anything if the game is running
         if (state == Application.GameState.RUNNING) return;
 
-        if (UserInPlayfield(collision))
+        if (!userInPlayfield && UserInPlayfield(collision))
         {
-            OnPlayfieldOccupied();
+            if (OnPlayfieldEmpty != null) OnPlayfieldOccupied.Invoke();
             userInPlayfield = true;
         }
     }
