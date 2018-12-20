@@ -4,6 +4,7 @@ public class TerrainGenerator : MonoBehaviour
 {
     [SerializeField] float terrainWidth = 0.3f;
     [SerializeField] [Range(1.0f, 30.0f)] float circulationTime = 10.0f;
+    [SerializeField] [Range(0.0f, 1.0f)] float circulationOffset = 0.25f;
     [SerializeField] [Range(0.0f, 10.0f)] float noiseMultiplier = 1.5f;
     [SerializeField] [Range(0.0f, 1.0f)] float terrainSize = 0.33f;
     [SerializeField] [Range(0.0f, 10.0f)] float minHeight = 3.0f;
@@ -43,6 +44,9 @@ public class TerrainGenerator : MonoBehaviour
             joints[i] = InitJoint();
         }
         InitTerrain();
+
+        // start in second quarter
+        positionCounter = (int)(NUM_POINTS / 2.0f);
     }
 
     void Update()
@@ -53,7 +57,7 @@ public class TerrainGenerator : MonoBehaviour
         noiseStep = direction * elapsedTime * noiseMultiplier;
 
         highPrecisionPosition = elapsedTime % circulationTime / circulationTime;
-        positionCounter = (int)Mathf.Lerp(0, NUM_POINTS, highPrecisionPosition);
+        positionCounter = (int)(Mathf.Lerp(0, NUM_POINTS, highPrecisionPosition) + circulationOffset * NUM_POINTS);
        
         if (positionCounter != prevPositionCounter)
         {

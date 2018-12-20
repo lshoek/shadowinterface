@@ -4,6 +4,7 @@ Shader "Custom/Blur13"
 	{
 		_MainTex ("Base (RGB)", 2D) = "white" {}
 		_IntensityMult ("Intensity Multiplication", Float) = 1.0
+		_ShadowColor("_ShadowColor", Color) = (0,0,0,1)
 	}
 
 	CGINCLUDE
@@ -16,6 +17,8 @@ Shader "Custom/Blur13"
 	sampler2D _MainTex;
 	
 	float4 _MainTex_TexelSize;
+
+	fixed4 _ShadowColor;
 
 	struct appdata
 	{
@@ -131,7 +134,7 @@ Shader "Custom/Blur13"
 				intensity += tex2D(_GrabTex, i.r5) * 0.010381362401148057;
 				intensity = clamp(intensity * _IntensityMult, 0.0, 1.0);
 				
-				return intensity;
+				return fixed4(_ShadowColor.rgb, inv(intensity.r));
 			}
 			ENDCG
 		}
