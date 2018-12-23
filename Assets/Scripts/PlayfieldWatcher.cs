@@ -21,7 +21,10 @@ public class PlayfieldWatcher : MonoBehaviour
         {
             if (OnPlayfieldEmpty != null) OnPlayfieldEmpty.Invoke();
             userInPlayfield = false;
+            Debug.Log("Start the game!!!!");
+            //Application.Instance.StartGame();
         }
+
     }
 
     void OnCollisionEnter(Collision collision)
@@ -32,10 +35,12 @@ public class PlayfieldWatcher : MonoBehaviour
         // don't do anything if the game is running
         if (state == Application.GameState.RUNNING) return;
 
-        if (!userInPlayfield && UserInPlayfield(collision))
+        if (!userInPlayfield && collision.gameObject.name == "MeshColliderTester")
         {
             if (OnPlayfieldEmpty != null) OnPlayfieldOccupied.Invoke();
             userInPlayfield = true;
+            Debug.Log("HIT!!!!");
+
         }
     }
 

@@ -88,6 +88,7 @@ public class Application : MonoBehaviour
         OverlayCamera.cullingMask = 1 << LayerMask.NameToLayer("ShadowOverlay");
 
         planetoids = new List<Planetoid>();
+        //StartGame();
     }
 
     void Update()

@@ -22,11 +22,13 @@ public class TriggerScript : MonoBehaviour
         if (col.gameObject.name == "DeadZone")
         {
             Debug.Log("Deadzone!!!!");
+            Application.Instance.StopGame();
         }
 
         if (col.gameObject.name == "SpikeRing")
         {
             Debug.Log("Spike!!!!");
+            Application.Instance.StopGame();
         }
     }
 }

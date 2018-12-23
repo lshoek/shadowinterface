@@ -16,7 +16,7 @@ public class PointGravity : MonoBehaviour
         RefreshColliders();
     }
 
-    void FixedUpdate()
+    void Update()
     {
         RefreshColliders(); // quick and dirty for testing purposes
         foreach (Collider c in Colliders)
@@ -26,7 +26,11 @@ public class PointGravity : MonoBehaviour
             {
                 Vector3 offset = transform.position - c.transform.position;
                 Vector3 dir = offset / offset.sqrMagnitude * mainRb.mass * 2.0f;
-                //rb.AddForce(dir);
+
+                if (!float.IsNaN(dir.x) | !float.IsNaN(dir.y) | !float.IsNaN(dir.z))
+                {
+                    rb.AddForce(dir);
+                }
             }
         }
     }
