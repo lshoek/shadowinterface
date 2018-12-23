@@ -26,7 +26,7 @@ public class PointGravity : MonoBehaviour
             {
                 Vector3 offset = transform.position - c.transform.position;
                 Vector3 dir = offset / offset.sqrMagnitude * mainRb.mass * 2.0f;
-                //rb.AddForce(dir);
+                rb.AddForce(dir);
             }
         }
     }

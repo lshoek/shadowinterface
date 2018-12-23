@@ -88,6 +88,8 @@ public class Application : MonoBehaviour
         OverlayCamera.cullingMask = 1 << LayerMask.NameToLayer("ShadowOverlay");
 
         planetoids = new List<Planetoid>();
+
+        //StartGame();
     }
 
     void Update()
@@ -97,7 +99,7 @@ public class Application : MonoBehaviour
 
         if (elapsedTime - lastSpawned > spawnDelay)
         {
-            if (planetoids.Count < 0)
+            if (planetoids.Count < 4)
                 SpawnPlanetoid(spawnVector);
             lastSpawned = elapsedTime;
         }

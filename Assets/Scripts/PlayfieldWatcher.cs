@@ -26,6 +26,7 @@ public class PlayfieldWatcher : MonoBehaviour
 
     void OnCollisionEnter(Collision collision)
     {
+        Debug.Log("HEY");
         lastCollisionTime = Time.time;
         Application.GameState state = Application.Instance.State;
 
