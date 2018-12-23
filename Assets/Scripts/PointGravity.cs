@@ -26,15 +26,8 @@ public class PointGravity : MonoBehaviour
             {
                 Vector3 offset = transform.position - c.transform.position;
                 Vector3 dir = offset / offset.sqrMagnitude * mainRb.mass * 2.0f;
-<<<<<<< HEAD
 
-                if (!float.IsNaN(dir.x) | !float.IsNaN(dir.y) | !float.IsNaN(dir.z))
-                {
-                    rb.AddForce(dir);
-                }
-=======
                 rb.AddForce(dir);
->>>>>>> 4764cb3f73e2a0781890c4fcb47be05a8d1471f6
             }
         }
     }
