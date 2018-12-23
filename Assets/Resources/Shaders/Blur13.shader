@@ -133,8 +133,9 @@ Shader "Custom/Blur13"
 				intensity += tex2D(_GrabTex, i.r4) * 0.010381362401148057;
 				intensity += tex2D(_GrabTex, i.r5) * 0.010381362401148057;
 				intensity = clamp(intensity * _IntensityMult, 0.0, 1.0);
-				
-				return fixed4(_ShadowColor.rgb, inv(intensity.r));
+
+				fixed result = inv(intensity);
+				return fixed4(_ShadowColor.rgb, result);
 			}
 			ENDCG
 		}
