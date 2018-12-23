@@ -8,8 +8,6 @@ public class DepthSourceView : MonoBehaviour
 {
     [HideInInspector] public DepthSourceManager DepthSourceManager;
 
-    [Range(-100, 100)] [SerializeField] float meshColliderThreshold = -1.0f;
-    [Range(0, 1)] [SerializeField] float depthShadowThreshold = 0.33f;
     [Range(0, 0.1f)] [SerializeField] double depthRescale = 0.01;
 
     public Camera SimulatedKinectCamera;
@@ -89,9 +87,11 @@ public class DepthSourceView : MonoBehaviour
     {
         if (sensor == null) return;
         if (DepthSourceManager == null) return;
-
-        // comment when testing without kinect
-        if (!DepthSourceManager.IsNewFrameAvailable()) return;
+        if (sensor.IsAvailable)
+        {
+            if (!DepthSourceManager.IsNewFrameAvailable())
+                return;
+        }
 
         // orthogonal raw depth mesh from kinect
         ushort[] rawDepthData = CropRawDepth(DepthSourceManager.GetData(), activeWidth, activeHeight);
