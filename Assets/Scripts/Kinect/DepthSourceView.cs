@@ -3,19 +3,20 @@ using System.Collections;
 using Windows.Kinect;
 using System.Collections.Generic;
 using System;
+using System.Threading.Tasks;
 
 public class DepthSourceView : MonoBehaviour
 {
     [HideInInspector] public DepthSourceManager DepthSourceManager;
 
-    [Range(0, 0.1f)] [SerializeField] double depthRescale = 0.01;
+    [Range(0, 0.1f)] [SerializeField] float depthRescale = 0.01f;
 
     public Camera SimulatedKinectCamera;
 
     public Transform ColliderMesh;
 
     private const int KINECTMESH_DOWNSAMPLING = 2;
-    private const int COLLIDERMESH_DOWNSAMPLING = 4;
+    private const int COLLIDERMESH_DOWNSAMPLING = 8;
     private const int MAX_DEPTH = 4500;
     private const int NUM_PIXELS = 400;
 
@@ -29,10 +30,7 @@ public class DepthSourceView : MonoBehaviour
 
     private MeshCollider meshCollider;
     private MeshFilter colliderMeshFilter;
-
-    private MeshRenderer meshRenderer;
     private MeshFilter meshFilter;
-    private Renderer shadowPlaneRenderer;
 
     private RenderTexture simulatedKinectRenderBuffer;
     public RenderTexture simulatedKinectRenderBufferColor;
@@ -50,12 +48,9 @@ public class DepthSourceView : MonoBehaviour
         meshCollider = ColliderMesh.GetComponent<MeshCollider>();
         colliderMeshFilter = ColliderMesh.GetComponent<MeshFilter>();
 
-        meshRenderer = GetComponent<MeshRenderer>();
         meshFilter = GetComponent<MeshFilter>();
 
-        shadowPlaneRenderer = FindObjectOfType<ShadowOverlay>().GetComponent<Renderer>();
-
-        blurMaterial = new Material(Resources.Load("Shaders/Blur13") as Shader);
+        blurMaterial = new Material(Resources.Load("Shaders/Blur5") as Shader);
         depthCopyMaterial = new Material(Resources.Load("Shaders/DepthCopy") as Shader);
 
         SimulatedKinectCamera.depthTextureMode = DepthTextureMode.Depth;
@@ -66,8 +61,8 @@ public class DepthSourceView : MonoBehaviour
             if (!sensor.IsOpen) sensor.Open();
 
             FrameDescription fd = sensor.DepthFrameSource.FrameDescription;
-            activeWidth = fd.Width;
-            activeHeight = fd.Height;
+            activeWidth = NUM_PIXELS;
+            activeHeight = NUM_PIXELS;
 
             // downsample to lower resolution
             kinectDepthMesh = new DepthMesh(activeWidth / KINECTMESH_DOWNSAMPLING, activeHeight / KINECTMESH_DOWNSAMPLING);
@@ -76,28 +71,27 @@ public class DepthSourceView : MonoBehaviour
             // texture buffers
             simulatedKinectRenderBuffer = new RenderTexture(activeWidth, activeHeight, 16, RenderTextureFormat.Depth);
             simulatedKinectRenderBufferColor = new RenderTexture(activeWidth, activeHeight, 0, RenderTextureFormat.ARGB32);
+            shadowRenderBuffer = new RenderTexture(fd.Width, fd.Height, 0, RenderTextureFormat.ARGB32);
 
             digitalKinectDepthTexture = new Texture2D(activeWidth, activeHeight, TextureFormat.ARGB32, false);
-
-            shadowRenderBuffer = new RenderTexture(fd.Width, fd.Height, 0, RenderTextureFormat.ARGB32);
         }
+        Camera.main.GetComponent<CameraRenderHooks>().OnPreRenderEvent += ProcessDepth;
+        Camera.main.GetComponent<CameraRenderHooks>().OnPostRenderEvent += RenderShadowQuad;
     }
 
     void Update()
     {
-        if (sensor == null) return;
-        if (DepthSourceManager == null) return;
-        if (sensor.IsAvailable)
-        {
-            if (!DepthSourceManager.IsNewFrameAvailable())
-                return;
-        }
+        if (!IsFrameValid()) return;
 
-        // orthogonal raw depth mesh from kinect
-        ushort[] rawDepthData = CropRawDepth(DepthSourceManager.GetData(), activeWidth, activeHeight);
-        UpdateDepthMesh(kinectDepthMesh, rawDepthData, KINECTMESH_DOWNSAMPLING);
+        ushort[] rawDepthData = DepthSourceManager.GetData(); //CropRawDepth(DepthSourceManager.GetData(), activeWidth, activeHeight);
+        UpdateDepthMesh(kinectDepthMesh, rawDepthData, depthRescale, KINECTMESH_DOWNSAMPLING);
 
         meshFilter.mesh = kinectDepthMesh.mesh;
+    }
+
+    private void ProcessDepth()
+    {
+        if (!IsFrameValid()) return;
 
         // render mesh from viewpoint of projector
         SimulatedKinectCamera.targetTexture = simulatedKinectRenderBuffer;
@@ -105,33 +99,52 @@ public class DepthSourceView : MonoBehaviour
 
         // copy depth to color buffer
         depthCopyMaterial.SetTexture("_DepthTex", simulatedKinectRenderBuffer);
-        Graphics.Blit(null, simulatedKinectRenderBufferColor, depthCopyMaterial);
+        Graphics.Blit(null, simulatedKinectRenderBufferColor, depthCopyMaterial); // blit directly to texture2d in unity 2019.1
+         
+        // apply blur for soft shadows
+        blurMaterial.SetColor("_ShadowColor", Application.Instance.Palette.WHITESMOKE);
+        Graphics.Blit(simulatedKinectRenderBufferColor, shadowRenderBuffer, blurMaterial);
 
-        // update collider mesh
-        //Graphics.CopyTexture(simulatedKinectRenderBufferColor, digitalKinectDepthTexture); // -> doesnt work????
+        // would rather place this in updatecollider task -> does not run on the main thread
         RenderTexture.active = simulatedKinectRenderBufferColor;
         digitalKinectDepthTexture.ReadPixels(new Rect(0, 0, activeWidth, activeHeight), 0, 0);
         digitalKinectDepthTexture.Apply();
         RenderTexture.active = null;
 
-        UpdateDepthMeshFromTexture(colliderDepthMesh, digitalKinectDepthTexture, COLLIDERMESH_DOWNSAMPLING);
+        UpdateDepthMesh(colliderDepthMesh, digitalKinectDepthTexture, 1.0f, COLLIDERMESH_DOWNSAMPLING);
 
         colliderMeshFilter.mesh = colliderDepthMesh.mesh;
         meshCollider.sharedMesh = colliderDepthMesh.mesh;
-
-        // apply blur for soft shadows
-        blurMaterial.SetColor("_ShadowColor", Application.Instance.Palette.WHITESMOKE);
-        Graphics.Blit(simulatedKinectRenderBufferColor, shadowRenderBuffer, blurMaterial);
-
-        shadowPlaneRenderer.material.SetTexture("_MainTex", shadowRenderBuffer);
     }
 
-    void OnGUI()
+    private void RenderShadowQuad()
     {
-        GUI.DrawTexture(new Rect(0, 0, Screen.width, Screen.height), shadowRenderBuffer);
+        GL.PushMatrix();
+        GL.LoadPixelMatrix();
+        Graphics.DrawTexture(new Rect(0, 0, Screen.width, Screen.height), shadowRenderBuffer);
+        GL.PopMatrix();
     }
 
-    private void UpdateDepthMeshFromTexture(DepthMesh depthMesh, Texture2D depthTexture, int downSampleSize)
+    private void UpdateDepthMesh(DepthMesh depthMesh, ushort[] depthData, float scale, int downSampleSize)
+    {
+        for (int y = 0; y < activeHeight; y += downSampleSize)
+        {
+            for (int x = 0; x < activeWidth; x += downSampleSize)
+            {
+                int idx = x / downSampleSize;
+                int idy = y / downSampleSize;
+
+                int fullIndex = y * activeWidth + x;
+                int smallIndex = (idy * (activeWidth / downSampleSize)) + idx;
+
+                float depth = depthData[fullIndex] * scale;
+                depthMesh.verts[smallIndex].z = depth;
+            }
+        }
+        depthMesh.Apply();
+    }
+
+    private void UpdateDepthMesh(DepthMesh depthMesh, Texture2D depthTexture, float scale, int downSampleSize)
     {
         byte[] depthData = depthTexture.GetRawTextureData();
         
@@ -145,66 +158,13 @@ public class DepthSourceView : MonoBehaviour
                 int fullIndex = y * activeWidth*4 + x*4; // ARGB
                 int smallIndex = idy * (activeWidth / downSampleSize) + idx;
 
-                if (smallIndex >= (activeWidth / downSampleSize) * (activeHeight / downSampleSize)) continue;
-
-                float depth = depthData[fullIndex];
+                float depth = depthData[fullIndex] * scale;
                 depthMesh.verts[smallIndex].z = depth;
             }
         }
         depthMesh.Apply();
     }
 
-    private void UpdateDepthMesh(DepthMesh depthMesh, ushort[] depthData, int downSampleSize)
-    {
-        for (int y = 0; y < activeHeight; y += downSampleSize)
-        {
-            for (int x = 0; x < activeWidth; x += downSampleSize)
-            {
-                int idx = x / downSampleSize;
-                int idy = y / downSampleSize;
-
-                int smallIndex = (idy * (activeWidth / downSampleSize)) + idx;
-
-                double avg = GetAvg(depthData, x, y);
-                avg = avg * depthRescale;
-
-                if (smallIndex >= depthMesh.verts.Length)
-                    continue;
-
-                depthMesh.verts[smallIndex].z = (float)avg;
-            }
-        }
-
-        // fixes camera clipping problems
-        Matrix4x4 translateUpwards = Matrix4x4.Translate(new Vector3(0.0f, 0.0f, upwardsTranslation));
-
-        for (int i = 0; i < depthMesh.verts.Length; i++)
-            depthMesh.verts[i] = translateUpwards.MultiplyPoint3x4(depthMesh.verts[i]);
-
-        depthMesh.Apply();
-    }
-    
-    private double GetAvg(ushort[] depthData, int x, int y)
-    {
-        double sum = 0.0;
-        int numSamples = 4;
-
-        //if ((x+numSamples) * (y+numSamples) >= depthData.Length)
-        //    return depthData[(y * activeWidth) + x];
-        
-        for (int y1 = y; y1 < y + numSamples; y1++)
-        {
-            for (int x1 = x; x1 < x + numSamples; x1++)
-            {
-                int fullIndex = (y1 * activeWidth) + x1;
-                if (fullIndex >= depthData.Length) return (y * activeWidth) + x;
-                sum += (depthData[fullIndex] == 0) ? MAX_DEPTH : depthData[fullIndex];
-            }
-        }
-        return sum / numSamples*numSamples;
-    }
-
-    #region "Helper Methods"
     ushort[] CropRawDepth(ushort[] orig, int newWidth, int newHeight)
     {
         FrameDescription fd = sensor.DepthFrameSource.FrameDescription;
@@ -224,32 +184,17 @@ public class DepthSourceView : MonoBehaviour
         return croppedDepth;
     }
 
-    byte[] RawDepthToByteBuffer(ushort[] rawDepth)
+    private bool IsFrameValid()
     {
-        byte[] depthBitmap = new byte[rawDepth.Length];
-        for (int i = 0; i < rawDepth.Length; i++)
+        if (sensor == null) return false;
+        if (DepthSourceManager == null) return false;
+        if (sensor.IsAvailable)
         {
-            int v = rawDepth[i] * 255 / MAX_DEPTH;
-            v = (v < 255) ? v : 255;
-            v = (v == 0) ? 255 : v;
-            depthBitmap[i] = (byte)v;
+            if (!DepthSourceManager.IsNewFrameAvailable())
+                return false;
         }
-        return depthBitmap;
+        return true;
     }
-
-    ushort[] RGBDepthToRawDepth(byte[] rgbDepth)
-    {
-        ushort[] rawDepth = new ushort[rgbDepth.Length / 3];
-        for (int i = 0; i < rawDepth.Length; i++)
-        {
-            int v = rgbDepth[i * 3] * 255 * 255;
-            v = (v < 255) ? v : 255;
-            v = (v == 0) ? 255 : v;
-            rawDepth[i] = (ushort)v;
-        }
-        return rawDepth;
-    }
-    #endregion
 
     void OnApplicationQuit()
     {

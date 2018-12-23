@@ -14,11 +14,14 @@ public class PointGravity : MonoBehaviour
     {
         mainRb = GetComponent<Rigidbody>();
         RefreshColliders();
+
+        Debug.Log("Warning: RefreshColliders is turned off!");
     }
 
     void Update()
     {
-        RefreshColliders(); // quick and dirty for testing purposes
+        //RefreshColliders(); // quick and dirty for testing purposes
+
         foreach (Collider c in Colliders)
         {
             Rigidbody rb = c.attachedRigidbody;
@@ -38,9 +41,9 @@ public class PointGravity : MonoBehaviour
         Colliders = Physics.OverlapSphere(transform.position, range);
     }
 
-    void OnDrawGizmos()
-    {
-        Gizmos.color = Color.cyan;
-        Gizmos.DrawWireSphere(transform.position, range);
-    }
+    //void OnDrawGizmos()
+    //{
+    //    Gizmos.color = Color.cyan;
+    //    Gizmos.DrawWireSphere(transform.position, range);
+    //}
 }

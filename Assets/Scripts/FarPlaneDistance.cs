@@ -5,15 +5,15 @@ using UnityEngine;
 public class FarPlaneDistance : MonoBehaviour
 {
     public Vector3 MaxFarPlaneReach;
-    private Camera camera;
+    private Camera cam;
 
     void Start()
     {
-        camera = GetComponent<Camera>();
+        cam = GetComponent<Camera>();
     }
 	
     void Update ()
     {
-        camera.farClipPlane = (camera.transform.position - MaxFarPlaneReach).magnitude;
+        cam.farClipPlane = (cam.transform.position - MaxFarPlaneReach).magnitude;
 	}
 }

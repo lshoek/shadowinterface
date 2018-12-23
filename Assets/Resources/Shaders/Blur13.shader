@@ -13,12 +13,8 @@ Shader "Custom/Blur13"
 	#pragma vertex VERT
 	#pragma fragment FRAG
 
-	sampler2D _GrabTex;
 	sampler2D _MainTex;
-	
 	float4 _MainTex_TexelSize;
-
-	fixed4 _ShadowColor;
 
 	struct appdata
 	{
@@ -96,11 +92,8 @@ Shader "Custom/Blur13"
 			Name "Vertical"
 
 			CGPROGRAM
-			sampler2D _SceneTex;
-
-			fixed4 _OutlineColor0;
-			fixed4 _OutlineColor1;
-
+			sampler2D _GrabTex;
+			fixed4 _ShadowColor;
 			float _IntensityMult;
 
 			v2f VERT (appdata IN)

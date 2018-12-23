@@ -15,7 +15,6 @@ public class Application : MonoBehaviour
     [HideInInspector] public TerrainGenerator Generator;
     [HideInInspector] public PlayfieldWatcher Watcher;
     [HideInInspector] public ColorPalette Palette;
-    [HideInInspector] public Camera OverlayCamera;
 
     public TextMeshPro ScoreTextMesh;
     public Animator Shoeprints;
@@ -34,18 +33,18 @@ public class Application : MonoBehaviour
         {
             if (value == GameState.IDLE)
             {
-                Watcher.OnPlayfieldEmpty = null;
-                Watcher.OnPlayfieldOccupied = delegate { StartGame(); };
+                Watcher.DisableOnPlayfieldEmpty();
+                Watcher.OnPlayfieldOccupied += StartGame;
             }
             else if (value == GameState.RUNNING)
             {
-                Watcher.OnPlayfieldEmpty = delegate { StopGame(); };
-                Watcher.OnPlayfieldOccupied = null;
+                Watcher.OnPlayfieldEmpty += StopGame;
+                Watcher.DisableOnPlayfieldOccupied();
             }
             else if (value == GameState.GAMEOVER)
             {
-                Watcher.OnPlayfieldEmpty = delegate { Idle(); };
-                Watcher.OnPlayfieldOccupied = null;
+                Watcher.OnPlayfieldEmpty += Idle;
+                Watcher.DisableOnPlayfieldOccupied();
             }
             state = value;
         }
@@ -75,18 +74,7 @@ public class Application : MonoBehaviour
         Idle();
 
         ScoreTextMesh.gameObject.SetActive(false);
-
-        GameObject ob = new GameObject("OverlayCamera");
-        OverlayCamera = ob.AddComponent<Camera>();
-        OverlayCamera.enabled = false;
-
         Palette = gameObject.AddComponent<ColorPalette>();
-
-        CopyCamera cc = ob.AddComponent<CopyCamera>();
-        cc.Initialize(Camera.main);
-
-        OverlayCamera.cullingMask = 1 << LayerMask.NameToLayer("ShadowOverlay");
-
         planetoids = new List<Planetoid>();
 
         //StartGame();
@@ -99,7 +87,7 @@ public class Application : MonoBehaviour
 
         if (elapsedTime - lastSpawned > spawnDelay)
         {
-            if (planetoids.Count < 4)
+            if (planetoids.Count < 0)
                 SpawnPlanetoid(spawnVector);
             lastSpawned = elapsedTime;
         }

@@ -5,11 +5,8 @@ public class PlayfieldWatcher : MonoBehaviour
 {
     [SerializeField] float PlayfieldTimeout = 2.0f;
 
-    public delegate void PlayfieldOccupiedDelegate();
-    public PlayfieldOccupiedDelegate OnPlayfieldOccupied;
-
-    public delegate void PlayfieldEmptyDelegate();
-    public PlayfieldEmptyDelegate OnPlayfieldEmpty;
+    public event Action OnPlayfieldOccupied;
+    public event Action OnPlayfieldEmpty;
 
     private float lastCollisionTime = 0.0f;
     private bool userInPlayfield = false;
@@ -21,15 +18,11 @@ public class PlayfieldWatcher : MonoBehaviour
         {
             if (OnPlayfieldEmpty != null) OnPlayfieldEmpty.Invoke();
             userInPlayfield = false;
-            Debug.Log("Start the game!!!!");
-            //Application.Instance.StartGame();
         }
-
     }
 
     void OnCollisionEnter(Collision collision)
     {
-        Debug.Log("HEY");
         lastCollisionTime = Time.time;
         Application.GameState state = Application.Instance.State;
 
@@ -50,5 +43,15 @@ public class PlayfieldWatcher : MonoBehaviour
         foreach (ContactPoint contact in collision.contacts)
             return contact.otherCollider is MeshCollider;
         return false;
+    }
+
+    public void DisableOnPlayfieldOccupied()
+    {
+        OnPlayfieldOccupied = null;
+    }
+
+    public void DisableOnPlayfieldEmpty()
+    {
+        OnPlayfieldEmpty = null;
     }
 }

@@ -4,6 +4,7 @@ Shader "Custom/Blur5"
 	{
 		_MainTex ("Base (RGB)", 2D) = "white" {}
 		_IntensityMult ("Intensity Multiplication", Float) = 1.0
+		_ShadowColor("_ShadowColor", Color) = (0,0,0,1)
 	}
 
 	CGINCLUDE
@@ -75,6 +76,7 @@ Shader "Custom/Blur5"
 
 			CGPROGRAM
 			sampler2D _GrabTex;
+			fixed4 _ShadowColor;
 			float _IntensityMult;
 
 			v2f VERT (appdata IN)
@@ -98,7 +100,8 @@ Shader "Custom/Blur5"
 				intensity += tex2D(_GrabTex, i.r1) * 0.35294117647058826;
 				intensity = clamp(intensity * _IntensityMult, 0.0, 1.0);
 
-				return intensity;
+				fixed result = inv(intensity);
+				return fixed4(_ShadowColor.rgb, result);
 			}
 			ENDCG
 		}
