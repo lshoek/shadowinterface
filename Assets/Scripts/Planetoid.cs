@@ -2,6 +2,7 @@
 
 public class Planetoid : MonoBehaviour
 {
+    public GameManager Manager { set { manager = value; } }
     public float Mass
     {
         get { return Collider.attachedRigidbody.mass; }
@@ -11,6 +12,7 @@ public class Planetoid : MonoBehaviour
     {
         get { return transform.localScale.x; }
     }
+    private GameManager manager;
 
     public Collider Collider;
     public Material Material;
@@ -35,6 +37,23 @@ public class Planetoid : MonoBehaviour
     void FixedUpdate()
     {
         Collider.attachedRigidbody.velocity = Vector3.ClampMagnitude(Collider.attachedRigidbody.velocity, maxSpeed);
+    }
+
+    void OnCollisionEnter(Collision collision)
+    {
+        // on kinectbody hit
+        if (collision.gameObject.GetComponent<MeshCollider>() != null)
+        {
+            // play explosion animation
+            // despawn planetoid
+        }
+
+        // on planet hit
+        if (collision.gameObject.GetComponent<PointGravity>() != null)
+        {
+            // play hit animation for planet and explosion for planetoid
+            // player takes damage or loses game
+        }
     }
 
     public void MultiplyMass(float scalar)

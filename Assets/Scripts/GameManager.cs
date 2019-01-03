@@ -47,6 +47,7 @@ public class GameManager : MonoBehaviour
     const float spawnVectorMagnitude = 20.0f;
 
     List<Planetoid> planetoids;
+    List<Planetoid> planetoidsToDespawn;
 
     float startTime = 0.0f;
     float survivalTime = 0.0f;
@@ -118,6 +119,8 @@ public class GameManager : MonoBehaviour
         if (State == GameState.RUNNING)
         {
             // planetoids
+            HandleCollisions();
+
             if (elapsedTime - lastSpawned > spawnInterval)
             {
                 SpawnPlanetoid(spawnVector, Random.Range(1.0f, 1.5f), Random.Range(0.75f, 2.0f));
@@ -126,6 +129,7 @@ public class GameManager : MonoBehaviour
             }
             GravityBody.UpdateSubjects(planetoids);
 
+            // hostile color flashing
             foreach (Planetoid p in planetoids)
             {
                 p.Material.SetColor("_Color", Color.HSVToRGB(turb, 0.333f, 1.0f));
@@ -143,7 +147,25 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    #region "Planetoid Wrapper Methods"
+    public void AddCollision(Planetoid poid)
+    {
+        bool wasAdded = false;
+        foreach (Planetoid p in planetoidsToDespawn)
+        {
+            if (p == poid)
+            {
+                wasAdded = true;
+                break;
+            }
+        }
+        if (!wasAdded) planetoidsToDespawn.Add(poid);
+    }
+
+    private void HandleCollisions()
+    {
+        //foreach ()
+    }
+
     private void SpawnPlanetoid(Vector3 position, float mass, float size)
     {
         GameObject ob = Instantiate(Resources.Load("Prefabs/Planetoid") as GameObject);
@@ -152,6 +174,7 @@ public class GameManager : MonoBehaviour
         ob.transform.position = position;
 
         Planetoid p = ob.GetComponent<Planetoid>();
+        p.Manager = this;
         p.MultiplyMass(mass);
         p.MultiplySize(size);
 
@@ -169,5 +192,4 @@ public class GameManager : MonoBehaviour
         foreach (Planetoid p in planetoids)
             DespawnPlanetoid(p);
     }
-    #endregion
 }
