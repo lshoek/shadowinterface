@@ -44,13 +44,15 @@ public class Planetoid : MonoBehaviour
         // on kinectbody hit
         if (collision.gameObject.GetComponent<MeshCollider>() != null)
         {
+            //manager.
             // play explosion animation
-            // despawn planetoid
+            manager.DespawnPlanetoid(this);
         }
 
         // on planet hit
         if (collision.gameObject.GetComponent<PointGravity>() != null)
         {
+            
             // play hit animation for planet and explosion for planetoid
             // player takes damage or loses game
         }

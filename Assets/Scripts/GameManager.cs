@@ -181,7 +181,7 @@ public class GameManager : MonoBehaviour
         planetoids.Add(p);
     }
 
-    private void DespawnPlanetoid(Planetoid p)
+    public void DespawnPlanetoid(Planetoid p)
     {
         planetoids.Remove(p);
         Destroy(p.gameObject);

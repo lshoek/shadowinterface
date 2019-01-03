@@ -33,7 +33,7 @@ Shader "Custom/FilterDepthNormals"
 				return OUT;
 			}
 
-			fixed4 FRAG (v2f i) : DEPTH
+			fixed4 FRAG (v2f i) : SV_Target
 			{
 				float3 forward = mul((float3x3)unity_CameraToWorld, float3(0,0,-1));
 				float diff = dot(forward, i.normal);
