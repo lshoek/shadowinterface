@@ -2,12 +2,12 @@
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
+using static Planetoid;
 using Random = UnityEngine.Random;
 
 public class GameManager : MonoBehaviour
 {
     [HideInInspector] public PointGravity GravityBody;
-    //[HideInInspector] public TerrainGenerator Generator;
     [HideInInspector] public PlayfieldWatcher Watcher;
 
     public enum GameState
@@ -41,8 +41,10 @@ public class GameManager : MonoBehaviour
             state = value;
         }
     }
+    public float Turb { get { return turb; } }
 
     [SerializeField] [Range(0.0f, 10.0f)] float noiseMultiplier = 1.5f;
+    [SerializeField] [Range(0.0f, 1.0f)] float friendlyPlanetoidRate = 0.1f;
 
     const float spawnVectorMagnitude = 20.0f;
 
@@ -58,6 +60,7 @@ public class GameManager : MonoBehaviour
 
     Vector2 direction;
     Vector2 noiseStep;
+    float turb;
 
     public TextMeshPro InfoTextMesh;
     public TextMeshPro ScoreTextMesh;
@@ -66,25 +69,26 @@ public class GameManager : MonoBehaviour
     void Awake()
     {
         GravityBody = FindObjectOfType<PointGravity>();
-        //Generator = FindObjectOfType<TerrainGenerator>();
         Watcher = FindObjectOfType<PlayfieldWatcher>();
 
         planetoids = new List<Planetoid>();
+        planetoidsToDespawn = new List<Planetoid>();
         Idle();
     }
 
     private void Idle()
     {
         State = GameState.IDLE;
-        ScoreTextMesh.gameObject.SetActive(false);
+        DespawnAllPlanetoids();
 
+        ScoreTextMesh.gameObject.SetActive(false);
         Shoeprints.Play("FadeIn");
+        InfoTextMesh.text = "Step inside to start a new round";
     }
 
     public void StartGame()
     {
         State = GameState.RUNNING;
-        //Generator.StartGeneration();
 
         ScoreTextMesh.gameObject.SetActive(true);
         startTime = Time.time;
@@ -101,8 +105,10 @@ public class GameManager : MonoBehaviour
     public void StopGame()
     {
         State = GameState.GAMEOVER;
-        DespawnPlanetoids();
-        //Generator.StopGeneration();
+        InfoTextMesh.text = "GAME OVER";
+
+        if (!Watcher.UserInPlayField)
+            Idle();
     }
 
     void Update()
@@ -111,7 +117,7 @@ public class GameManager : MonoBehaviour
         float intensityRamp = (elapsedTime / 250.0f) + 1.0f;
 
         noiseStep = direction * elapsedTime * noiseMultiplier;
-        float turb = Mathf.PerlinNoise(noiseStep.x, noiseStep.y);
+        turb = Mathf.PerlinNoise(noiseStep.x, noiseStep.y);
         float noisyAmplitude = (elapsedTime + 10.0f * turb) * intensityRamp;
 
         Vector3 spawnVector = GravityBody.Position + new Vector3(Mathf.Cos(noisyAmplitude), 0.0f,Mathf.Sin(noisyAmplitude)) * spawnVectorMagnitude;
@@ -124,17 +130,15 @@ public class GameManager : MonoBehaviour
 
             if (elapsedTime - lastSpawned > spawnInterval)
             {
-                SpawnPlanetoid(spawnVector, Random.Range(1.0f, 1.5f), Random.Range(0.75f, 2.0f));
+                if (Random.Range(0.0f, 1.0f) > friendlyPlanetoidRate)
+                    SpawnPlanetoid(PlanetoidType.HOSTILE, spawnVector, Random.Range(1.0f, 1.5f), Random.Range(0.75f, 2.0f));
+                else
+                    SpawnPlanetoid(PlanetoidType.FRIENDLY, spawnVector, Random.Range(1.0f, 1.5f), Random.Range(0.75f, 2.0f));
+
                 spawnInterval = initialSpawnInterval / (intensityRamp + Mathf.Abs(turb) * 3.0f);
                 lastSpawned = elapsedTime;
             }
             GravityBody.UpdateSubjects(planetoids);
-
-            // hostile color flashing
-            foreach (Planetoid p in planetoids)
-            {
-                p.Material.SetColor("_Color", Color.HSVToRGB(1.0f, turb, 1.0f));
-            }
 
             // hud
             survivalTime = elapsedTime - startTime;
@@ -164,35 +168,45 @@ public class GameManager : MonoBehaviour
 
     private void HandleCollisions()
     {
-        //foreach ()
-
+        foreach (Planetoid p in planetoidsToDespawn)
+        {
+            DespawnPlanetoid(p);
+        }
+        planetoidsToDespawn.Clear();
     }
 
-    private void SpawnPlanetoid(Vector3 position, float mass, float size)
+    private void SpawnPlanetoid(PlanetoidType type, Vector3 position, float drag, float size)
     {
+        GameObject ob = (type == PlanetoidType.HOSTILE) ? 
+            Instantiate(Resources.Load("Prefabs/Planetoid") as GameObject) : 
+            Instantiate(Resources.Load("Prefabs/Ship") as GameObject);
 
-            GameObject ob = Instantiate(Resources.Load("Prefabs/Planetoid") as GameObject);
-            ob.transform.SetParent(Application.Instance.WorldParent);
-            ob.name = string.Format("Planetoid{0}", planetoids.Count);
-            ob.transform.position = position;
+        ob.name = (type == PlanetoidType.HOSTILE) ? "poid" : "ship";
+        ob.transform.SetParent(Application.Instance.WorldParent);
+        ob.transform.position = position;
 
+        if (ob != null)
+        {
             Planetoid p = ob.GetComponent<Planetoid>();
             p.Manager = this;
-            p.MultiplyMass(mass);
+            p.MultiplyDrag(drag);
             p.MultiplySize(size);
 
             planetoids.Add(p);
+        }
     }
 
-    public void DespawnPlanetoid(Planetoid p)
+    private void DespawnPlanetoid(Planetoid p)
     {
         planetoids.Remove(p);
         Destroy(p.gameObject);
     }
 
-    private void DespawnPlanetoids()
+    private void DespawnAllPlanetoids()
     {
-        foreach (Planetoid p in planetoids.ToArray())
-            DespawnPlanetoid(p);
+        planetoidsToDespawn.Clear();
+        foreach (Planetoid p in planetoids)
+            Destroy(p.gameObject);
+        planetoids.Clear();
     }
 }

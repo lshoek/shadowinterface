@@ -175,7 +175,6 @@ public class DepthSourceView : MonoBehaviour
                 depth = (depth < MAX_DEPTH) ? depth : MAX_DEPTH;
                 depth = (depth == 0) ? MAX_DEPTH : depth;
                 depth = (depth / MAX_DEPTH) * scale;
-                //depthMesh.verts[smallIndex].z = depth;
 
                 depthMesh.OrigVerts[smallIndex].z = depth;
                 depthMesh.verts[smallIndex] = shearTransformation.MultiplyPoint3x4(depthMesh.OrigVerts[smallIndex]);
