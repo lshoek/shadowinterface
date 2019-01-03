@@ -101,6 +101,7 @@ public class GameManager : MonoBehaviour
     public void StopGame()
     {
         State = GameState.GAMEOVER;
+        DespawnPlanetoids();
         //Generator.StopGeneration();
     }
 
@@ -132,7 +133,7 @@ public class GameManager : MonoBehaviour
             // hostile color flashing
             foreach (Planetoid p in planetoids)
             {
-                p.Material.SetColor("_Color", Color.HSVToRGB(turb, 0.333f, 1.0f));
+                p.Material.SetColor("_Color", Color.HSVToRGB(1.0f, turb, 1.0f));
             }
 
             // hud
@@ -164,24 +165,26 @@ public class GameManager : MonoBehaviour
     private void HandleCollisions()
     {
         //foreach ()
+
     }
 
     private void SpawnPlanetoid(Vector3 position, float mass, float size)
     {
-        GameObject ob = Instantiate(Resources.Load("Prefabs/Planetoid") as GameObject);
-        ob.transform.SetParent(Application.Instance.WorldParent);
-        ob.name = string.Format("Planetoid{0}", planetoids.Count);
-        ob.transform.position = position;
 
-        Planetoid p = ob.GetComponent<Planetoid>();
-        p.Manager = this;
-        p.MultiplyMass(mass);
-        p.MultiplySize(size);
+            GameObject ob = Instantiate(Resources.Load("Prefabs/Planetoid") as GameObject);
+            ob.transform.SetParent(Application.Instance.WorldParent);
+            ob.name = string.Format("Planetoid{0}", planetoids.Count);
+            ob.transform.position = position;
 
-        planetoids.Add(p);
+            Planetoid p = ob.GetComponent<Planetoid>();
+            p.Manager = this;
+            p.MultiplyMass(mass);
+            p.MultiplySize(size);
+
+            planetoids.Add(p);
     }
 
-    private void DespawnPlanetoid(Planetoid p)
+    public void DespawnPlanetoid(Planetoid p)
     {
         planetoids.Remove(p);
         Destroy(p.gameObject);
@@ -189,7 +192,7 @@ public class GameManager : MonoBehaviour
 
     private void DespawnPlanetoids()
     {
-        foreach (Planetoid p in planetoids)
+        foreach (Planetoid p in planetoids.ToArray())
             DespawnPlanetoid(p);
     }
 }

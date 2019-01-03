@@ -41,19 +41,19 @@ public class Planetoid : MonoBehaviour
 
     void OnCollisionEnter(Collision collision)
     {
-        // on kinectbody hit
-        if (collision.gameObject.GetComponent<MeshCollider>() != null)
+        if (collision.gameObject.name == "TestMesh")
         {
-            // play explosion animation
-            // despawn planetoid
+            Debug.Log("Mesh Hit!!!");
+            Application.Instance.GameManager.DespawnPlanetoid(GetComponent<Planetoid>());
         }
 
-        // on planet hit
-        if (collision.gameObject.GetComponent<PointGravity>() != null)
+
+        if (collision.gameObject.name == "Planet")
         {
-            // play hit animation for planet and explosion for planetoid
-            // player takes damage or loses game
+            Debug.Log("Planet Hit!!!");
+            Application.Instance.GameManager.StopGame();
         }
+
     }
 
     public void MultiplyMass(float scalar)
