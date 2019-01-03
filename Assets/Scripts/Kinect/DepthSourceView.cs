@@ -105,19 +105,20 @@ public class DepthSourceView : MonoBehaviour
         SimulatedKinectCamera.targetTexture = simulatedKinectRenderBuffer;
         SimulatedKinectCamera.Render();
 
-        // request gpu readback right after camera prerender
-        //if (requests.Count == 0) requests.Enqueue(AsyncGPUReadback.Request(simulatedKinectRenderBufferColor));
-
         // copy depth to color buffer
         depthCopyMaterial.SetTexture("_DepthTex", simulatedKinectRenderBuffer);
         depthCopyMaterial.SetFloat("_SurfaceCutoff0", surfaceCutoff0);
         depthCopyMaterial.SetFloat("_SurfaceCutoff1", surfaceCutoff1);
         Graphics.Blit(null, simulatedKinectRenderBufferColor, depthCopyMaterial); // blit directly to texture2d in unity 2019.1
 
+        // request gpu readback right after camera prerender
+        requests.Enqueue(AsyncGPUReadback.Request(simulatedKinectRenderBufferColor));
+
         // apply blur for soft shadows
         blurMaterial.SetColor("_ShadowColor", Application.Instance.Palette.WHITESMOKE);
         Graphics.Blit(simulatedKinectRenderBufferColor, shadowRenderBuffer, blurMaterial);
 
+        // use  
         if (requests.Count > 0)
         {
             AsyncGPUReadbackRequest req = requests.Peek();
@@ -127,20 +128,18 @@ public class DepthSourceView : MonoBehaviour
                 requests.Dequeue();
                 return;
             }
-
             // unfortunately we must wait for this action to complete
-            if (req.done)
-            {
-                digitalKinectDepthTexture.SetPixels32(req.GetData<Color32>().ToArray());
-                digitalKinectDepthTexture.Apply();
+            req.WaitForCompletion();
 
-                UpdateDepthMesh(colliderDepthMesh, digitalKinectDepthTexture, 1.0f, COLLIDERMESH_DOWNSAMPLING);
+            digitalKinectDepthTexture.SetPixels32(req.GetData<Color32>().ToArray());
+            digitalKinectDepthTexture.Apply();
 
-                colliderMeshFilter.mesh = colliderDepthMesh.mesh;
-                meshCollider.sharedMesh = colliderDepthMesh.mesh;
+            UpdateDepthMesh(colliderDepthMesh, digitalKinectDepthTexture, 1.0f, COLLIDERMESH_DOWNSAMPLING);
 
-                requests.Dequeue();
-            }
+            colliderMeshFilter.mesh = colliderDepthMesh.mesh;
+            meshCollider.sharedMesh = colliderDepthMesh.mesh;
+
+            requests.Dequeue();
         }
     }
 
