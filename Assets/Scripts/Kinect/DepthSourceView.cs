@@ -11,8 +11,9 @@ public class DepthSourceView : MonoBehaviour
     [HideInInspector] public DepthSourceManager DepthSourceManager;
 
     [Range(1.0f, 400.0f)] [SerializeField] float depthRescale = 400.0f;
-    [Range(-1.0f, 1.0f)] [SerializeField] float surfaceCutoff = 0.05f;
-    [Range(0.0f, 100.0f)] [SerializeField] float skew = 0.0f;
+    [Range(0.0f, 1.0f)] [SerializeField] float surfaceCutoff0 = 0.05f;
+    [Range(0.0f, 1.0f)] [SerializeField] float surfaceCutoff1 = 1.0f;
+    [Range(-100.0f, 100.0f)] [SerializeField] float shear = 32.0f;
 
     public Camera SimulatedKinectCamera;
 
@@ -48,7 +49,7 @@ public class DepthSourceView : MonoBehaviour
 
     private Queue<AsyncGPUReadbackRequest> requests = new Queue<AsyncGPUReadbackRequest>();
 
-    private bool transformOnce = true;
+    Matrix4x4 shearTransformation = Matrix4x4.identity;
 
     void Start()
     {
@@ -57,10 +58,10 @@ public class DepthSourceView : MonoBehaviour
 
         meshFilter = GetComponent<MeshFilter>();
 
-        blurMaterial = new Material(Resources.Load("Shaders/Blur9") as Shader);
+        blurMaterial = new Material(Resources.Load("Shaders/Blur13") as Shader);
         depthCopyMaterial = new Material(Resources.Load("Shaders/DepthCopy") as Shader);
 
-        SimulatedKinectCamera.depthTextureMode = DepthTextureMode.DepthNormals;
+        SimulatedKinectCamera.depthTextureMode = DepthTextureMode.Depth;
         sensor = KinectSensor.GetDefault();
 
         if (sensor != null)
@@ -76,7 +77,7 @@ public class DepthSourceView : MonoBehaviour
             colliderDepthMesh = new DepthMesh(activeWidth / COLLIDERMESH_DOWNSAMPLING, activeHeight / COLLIDERMESH_DOWNSAMPLING);
 
             // texture buffers
-            simulatedKinectRenderBuffer = new RenderTexture(activeWidth, activeHeight, 16, RenderTextureFormat.ARGB32);
+            simulatedKinectRenderBuffer = new RenderTexture(activeWidth, activeHeight, 16, RenderTextureFormat.Depth);
             simulatedKinectRenderBufferColor = new RenderTexture(activeWidth, activeHeight, 0, RenderTextureFormat.ARGB32);
             shadowRenderBuffer = new RenderTexture(fd.Width, fd.Height, 0, RenderTextureFormat.ARGB32);
 
@@ -104,19 +105,20 @@ public class DepthSourceView : MonoBehaviour
         SimulatedKinectCamera.targetTexture = simulatedKinectRenderBuffer;
         SimulatedKinectCamera.Render();
 
-        // request gpu readback right after camera prerender
-        //if (requests.Count == 0) requests.Enqueue(AsyncGPUReadback.Request(simulatedKinectRenderBufferColor));
-
         // copy depth to color buffer
-        
-        depthCopyMaterial.SetTexture("_DepthNormalsTex", simulatedKinectRenderBuffer);
-        depthCopyMaterial.SetFloat("_SurfaceCutoff", surfaceCutoff);
+        depthCopyMaterial.SetTexture("_DepthTex", simulatedKinectRenderBuffer);
+        depthCopyMaterial.SetFloat("_SurfaceCutoff0", surfaceCutoff0);
+        depthCopyMaterial.SetFloat("_SurfaceCutoff1", surfaceCutoff1);
         Graphics.Blit(null, simulatedKinectRenderBufferColor, depthCopyMaterial); // blit directly to texture2d in unity 2019.1
+
+        // request gpu readback right after camera prerender
+        requests.Enqueue(AsyncGPUReadback.Request(simulatedKinectRenderBufferColor));
 
         // apply blur for soft shadows
         blurMaterial.SetColor("_ShadowColor", Application.Instance.Palette.WHITESMOKE);
         Graphics.Blit(simulatedKinectRenderBufferColor, shadowRenderBuffer, blurMaterial);
 
+        // use  
         if (requests.Count > 0)
         {
             AsyncGPUReadbackRequest req = requests.Peek();
@@ -126,20 +128,18 @@ public class DepthSourceView : MonoBehaviour
                 requests.Dequeue();
                 return;
             }
-
             // unfortunately we must wait for this action to complete
-            if (req.done)
-            {
-                digitalKinectDepthTexture.SetPixels32(req.GetData<Color32>().ToArray());
-                digitalKinectDepthTexture.Apply();
+            req.WaitForCompletion();
 
-                UpdateDepthMesh(colliderDepthMesh, digitalKinectDepthTexture, 1.0f, COLLIDERMESH_DOWNSAMPLING);
+            digitalKinectDepthTexture.SetPixels32(req.GetData<Color32>().ToArray());
+            digitalKinectDepthTexture.Apply();
 
-                colliderMeshFilter.mesh = colliderDepthMesh.mesh;
-                meshCollider.sharedMesh = colliderDepthMesh.mesh;
+            UpdateDepthMesh(colliderDepthMesh, digitalKinectDepthTexture, 1.0f, COLLIDERMESH_DOWNSAMPLING);
 
-                requests.Dequeue();
-            }
+            colliderMeshFilter.mesh = colliderDepthMesh.mesh;
+            meshCollider.sharedMesh = colliderDepthMesh.mesh;
+
+            requests.Dequeue();
         }
     }
 
@@ -147,13 +147,20 @@ public class DepthSourceView : MonoBehaviour
     {
         GL.PushMatrix();
         GL.LoadPixelMatrix();
-        Graphics.DrawTexture(new Rect(0, 0, Screen.width, Screen.height), shadowRenderBuffer);
+
+        int size = Math.Min(Screen.width, Screen.height);
+        int xOffset = (Math.Max(Screen.width, Screen.height) - size) / 2;
+        
+        Graphics.DrawTexture(new Rect(xOffset, 0, size, size), shadowRenderBuffer);
         GL.PopMatrix();
     }
 
     // first pass
     private void UpdateDepthMesh(DepthMesh depthMesh, ushort[] depthData, float scale, int downSampleSize)
     {
+        shearTransformation = Matrix4x4.identity;
+        shearTransformation[9] = shear / NUM_PIXELS;
+
         for (int y = 0; y < activeHeight; y += downSampleSize)
         {
             for (int x = 0; x < activeWidth; x += downSampleSize)
@@ -168,19 +175,11 @@ public class DepthSourceView : MonoBehaviour
                 depth = (depth < MAX_DEPTH) ? depth : MAX_DEPTH;
                 depth = (depth == 0) ? MAX_DEPTH : depth;
                 depth = (depth / MAX_DEPTH) * scale;
-                depthMesh.verts[smallIndex].z = depth;
-            }
-        }
+                //depthMesh.verts[smallIndex].z = depth;
 
-        if (transformOnce)
-        {
-            Matrix4x4 skewMatrix = Matrix4x4.identity;
-            skewMatrix[1] = skew / 100.0f;
-            for (int i = 0; i < depthMesh.verts.Length; i++)
-            {
-                depthMesh.verts[i] = skewMatrix.MultiplyPoint3x4(depthMesh.verts[i]);
+                depthMesh.OrigVerts[smallIndex].z = depth;
+                depthMesh.verts[smallIndex] = shearTransformation.MultiplyPoint3x4(depthMesh.OrigVerts[smallIndex]);
             }
-            transformOnce = false;
         }
         depthMesh.Apply();
         depthMesh.mesh.RecalculateNormals();

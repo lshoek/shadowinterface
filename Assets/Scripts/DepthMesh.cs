@@ -3,6 +3,8 @@ using UnityEngine;
 
 public class DepthMesh
 {
+    public Vector3[] OrigVerts { get; private set; }
+
     public Mesh mesh;
     public Vector3[] verts;
     public int[] triangles;
@@ -14,6 +16,8 @@ public class DepthMesh
         mesh = new Mesh();
         verts = new Vector3[width * height];
         triangles = new int[6 * ((width - 1) * (height - 1))];
+
+        OrigVerts = new Vector3[width * height];
 
         Width = width;
         Height = height;
@@ -32,6 +36,7 @@ public class DepthMesh
                 int index = (y * Width) + x;
 
                 verts[index] = new Vector3(x, -y, 0);
+                OrigVerts[index] = new Vector3(x, -y, 0);
 
                 // Skip the last row/col
                 if (x != (Width - 1) && y != (Height - 1))

@@ -43,15 +43,27 @@ public class Planetoid : MonoBehaviour
     {
         if (collision.gameObject.name == "TestMesh")
         {
+<<<<<<< HEAD
             Debug.Log("Mesh Hit!!!");
             Application.Instance.GameManager.DespawnPlanetoid(GetComponent<Planetoid>());
+=======
+            //manager.
+            // play explosion animation
+            manager.DespawnPlanetoid(this);
+>>>>>>> 1cac12f3f3465559857c2561277e871275675b06
         }
 
 
         if (collision.gameObject.name == "Planet")
         {
+<<<<<<< HEAD
             Debug.Log("Planet Hit!!!");
             Application.Instance.GameManager.StopGame();
+=======
+            
+            // play hit animation for planet and explosion for planetoid
+            // player takes damage or loses game
+>>>>>>> 1cac12f3f3465559857c2561277e871275675b06
         }
 
     }

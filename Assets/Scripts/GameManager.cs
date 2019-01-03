@@ -108,7 +108,7 @@ public class GameManager : MonoBehaviour
     void Update()
     {
         float elapsedTime = Time.time;
-        float intensityRamp = (elapsedTime / 100.0f) + 1.0f;
+        float intensityRamp = (elapsedTime / 250.0f) + 1.0f;
 
         noiseStep = direction * elapsedTime * noiseMultiplier;
         float turb = Mathf.PerlinNoise(noiseStep.x, noiseStep.y);
