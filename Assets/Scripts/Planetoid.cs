@@ -2,75 +2,75 @@
 
 public class Planetoid : MonoBehaviour
 {
-    public GameManager Manager { set { manager = value; } }
-    public float Mass
+    public enum PlanetoidType
     {
-        get { return Collider.attachedRigidbody.mass; }
+        HOSTILE,
+        FRIENDLY
     }
+    
+    [SerializeField] private PlanetoidType type;
+    public PlanetoidType Type { get { return type; } }
 
-    public float Size
-    {
-        get { return transform.localScale.x; }
-    }
     private GameManager manager;
+    public GameManager Manager { set { manager = value; } }
 
-    public Collider Collider;
-    public Material Material;
+    public float Drag { get { return Collider.attachedRigidbody.drag; } }
+    public float Size { get { return transform.localScale.x; } }
 
-    private float defaultMass;
-    private float defaultSize;
+    [HideInInspector] public Collider Collider;
+    [HideInInspector] public Material Material = null;
+
+    [SerializeField] private float hostileHue;
+    [SerializeField] private float friendlyHue;
 
     [SerializeField] private float defaultMaxSpeed = 2.0f;
     private float maxSpeed;
 
+    private float defaultDrag;
+    private float defaultSize;
+
     void Awake()
     {
         Collider = GetComponent<Collider>();
-        Material = GetComponent<Renderer>().material;
+        
+        if (Type == PlanetoidType.HOSTILE)
+            Material = GetComponent<Renderer>().material;
 
-        defaultMass = Collider.attachedRigidbody.mass;
+        defaultDrag = Collider.attachedRigidbody.drag;
         defaultSize = Collider.transform.localScale.x;
 
         maxSpeed = defaultMaxSpeed;
     }
 
-    void FixedUpdate()
+    void Update()
     {
+        // color flashing
+        if (Type == PlanetoidType.HOSTILE)
+            Material.SetColor("_Color", Color.HSVToRGB(hostileHue, Application.Instance.GameManager.Turb, 1.0f));
+        else
+            Material.SetColor("_Color", Color.HSVToRGB(friendlyHue, Application.Instance.GameManager.Turb, 1.0f));
+
         Collider.attachedRigidbody.velocity = Vector3.ClampMagnitude(Collider.attachedRigidbody.velocity, maxSpeed);
     }
 
     void OnCollisionEnter(Collision collision)
     {
-        if (collision.gameObject.name == "TestMesh")
+        if (collision.gameObject.name == "ColliderMesh")
         {
-<<<<<<< HEAD
-            Debug.Log("Mesh Hit!!!");
-            Application.Instance.GameManager.DespawnPlanetoid(GetComponent<Planetoid>());
-=======
-            //manager.
+            manager.AddCollision(this);
             // play explosion animation
-            manager.DespawnPlanetoid(this);
->>>>>>> 1cac12f3f3465559857c2561277e871275675b06
         }
-
-
         if (collision.gameObject.name == "Planet")
         {
-<<<<<<< HEAD
-            Debug.Log("Planet Hit!!!");
-            Application.Instance.GameManager.StopGame();
-=======
-            
+            manager.StopGame();
             // play hit animation for planet and explosion for planetoid
             // player takes damage or loses game
->>>>>>> 1cac12f3f3465559857c2561277e871275675b06
         }
-
     }
 
-    public void MultiplyMass(float scalar)
+    public void MultiplyDrag(float scalar)
     {
-        Collider.attachedRigidbody.mass = defaultMass * scalar;
+        Collider.attachedRigidbody.drag = defaultDrag * scalar;
     }
 
     public void MultiplySize(float scalar)
