@@ -1,6 +1,5 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
+using static GameManager;
 
 public class PlayerTrigger : MonoBehaviour {
 
@@ -15,7 +14,8 @@ public class PlayerTrigger : MonoBehaviour {
 	}
 	
 	// Update is called once per frame
-	void Update () {
+	void Update ()
+    {
         float elapsedTime = Time.time;
         if (userInPlayfield && elapsedTime - lastCollisionTime > PlayfieldTimeout)
         {
@@ -28,16 +28,15 @@ public class PlayerTrigger : MonoBehaviour {
     void OnTriggerEnter(Collider col)
     {
         lastCollisionTime = Time.time;
-        Application.GameState state = Application.Instance.State;
+        GameState state = Application.Instance.GameManager.State;
 
         // don't do anything if the game is running
-        if (state == Application.GameState.RUNNING) return;
+        if (state == GameState.RUNNING) return;
 
         if (!userInPlayfield && col.gameObject.name == "MeshColliderTester")
         {
             userInPlayfield = true;
             Debug.Log("HIT!!!!");
-
         }
     }
 }

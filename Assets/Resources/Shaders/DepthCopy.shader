@@ -9,7 +9,8 @@ Shader "Custom/DepthCopy"
 
 	Properties
 	{
-		_DepthTex("Base (RGB)", 2D) = "white" {}
+		_DepthNormalsTex("Base (RGB)", 2D) = "white" {}
+		_SurfaceCutoff("Surface Cutoff", Float) = 0.05
 	}
 
 	SubShader
@@ -21,7 +22,8 @@ Shader "Custom/DepthCopy"
 		Pass
 		{
 			CGPROGRAM
-			uniform sampler2D _DepthTex;
+			uniform sampler2D _DepthNormalsTex;
+			uniform float _SurfaceCutoff;
 
 			struct appdata
 			{
@@ -45,7 +47,17 @@ Shader "Custom/DepthCopy"
 
 			fixed4 FRAG (v2f i) : SV_Target
 			{
-				return Linear01Depth(SAMPLE_DEPTH_TEXTURE_PROJ(_DepthTex , i.uv));
+				float d;
+				float3 n;
+
+				DecodeDepthNormal(tex2D(_DepthNormalsTex, i.uv), d, n);
+
+    			float3 forward = float3(0, 0, -1);
+
+    			d = (dot(forward, n) < _SurfaceCutoff) ? d : 0;
+    			d = (d <= 1.0) ? d : 0;
+
+				return inv(d * 1.5);
 			}
 			ENDCG
 		}

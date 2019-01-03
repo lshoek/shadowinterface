@@ -1,5 +1,6 @@
 ﻿using System;
 using UnityEngine;
+using static GameManager;
 
 public class PlayfieldWatcher : MonoBehaviour
 {
@@ -24,10 +25,10 @@ public class PlayfieldWatcher : MonoBehaviour
     void OnCollisionEnter(Collision collision)
     {
         lastCollisionTime = Time.time;
-        Application.GameState state = Application.Instance.State;
+        GameState state = Application.Instance.GameManager.State;
 
         // don't do anything if the game is running
-        if (state == Application.GameState.RUNNING) return;
+        if (state == GameState.RUNNING) return;
 
         if (!userInPlayfield && collision.gameObject.name == "MeshColliderTester")
         {

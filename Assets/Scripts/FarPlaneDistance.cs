@@ -14,6 +14,6 @@ public class FarPlaneDistance : MonoBehaviour
 	
     void Update ()
     {
-        cam.farClipPlane = (cam.transform.position - MaxFarPlaneReach).magnitude;
+        cam.farClipPlane = Vector3.Dot(cam.transform.position - MaxFarPlaneReach, Vector3.up);
 	}
 }

@@ -18,6 +18,7 @@ public class DepthMesh
         Width = width;
         Height = height;
 
+        mesh.MarkDynamic();
         CreateMesh();
     }
 
@@ -49,12 +50,12 @@ public class DepthMesh
                 }
             }
         }
-        mesh.vertices = verts;
-        mesh.triangles = triangles;
+        Apply();
     }
 
     public void Apply()
     {
+        mesh.MarkDynamic();
         mesh.vertices = verts;
         mesh.triangles = triangles;
     }
