@@ -45,8 +45,8 @@ public class GameManager : MonoBehaviour
 
     [SerializeField] [Range(0.0f, 10.0f)] float noiseMultiplier = 1.5f;
     [SerializeField] [Range(0.0f, 1.0f)] float friendlyPlanetoidRate = 0.1f;
-    [SerializeField] private float hostileHue;
-    [SerializeField] private float friendlyHue;
+    [SerializeField] [Range(0.0f, 1.0f)] private float hostileHue;
+    [SerializeField] [Range(0.0f, 1.0f)] private float friendlyHue;
 
     public float HostileHue { get { return hostileHue; } }
     public float FriendlyHue{ get { return friendlyHue; } }
@@ -79,6 +79,8 @@ public class GameManager : MonoBehaviour
         planetoids = new List<Planetoid>();
         planetoidsToDespawn = new List<Planetoid>();
         Idle();
+
+        StartGame();
     }
 
     private void Idle()
@@ -108,7 +110,7 @@ public class GameManager : MonoBehaviour
         spawnInterval = initialSpawnInterval;
 
         Shoeprints.Play("FadeOut");
-        InfoTextMesh.text = string.Format("survival mode");
+        InfoTextMesh.text = string.Format("deflect hostile aircraft. save the dinosaurs.");
     }
 
     public void StopGame()
@@ -154,9 +156,9 @@ public class GameManager : MonoBehaviour
             if (elapsedTime - lastSpawned > spawnInterval)
             {
                 if (Random.Range(0.0f, 1.0f) > friendlyPlanetoidRate)
-                    SpawnPlanetoid(PlanetoidType.HOSTILE, spawnVector, Random.Range(1.0f, 1.5f), Random.Range(0.75f, 2.0f));
+                    SpawnPlanetoid(PlanetoidType.HOSTILE, spawnVector, Random.Range(1.0f, 1.75f), Random.Range(2.0f, 3.0f));
                 else
-                    SpawnPlanetoid(PlanetoidType.FRIENDLY, spawnVector, Random.Range(1.0f, 1.5f), Random.Range(0.75f, 2.0f));
+                    SpawnPlanetoid(PlanetoidType.FRIENDLY, spawnVector, Random.Range(1.0f, 1.5f), Random.Range(0.5f, 1.0f));
 
                 spawnInterval = initialSpawnInterval / (intensityRamp + Mathf.Abs(Turb) * 3.0f);
                 lastSpawned = elapsedTime;

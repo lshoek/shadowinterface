@@ -40,16 +40,13 @@ public class Planetoid : MonoBehaviour
     void Update()
     {
         // type specific
-        if (Type == PlanetoidType.HOSTILE)
-        {
-            Material.SetColor("_Color", Color.HSVToRGB(Application.Instance.GameManager.HostileHue, Application.Instance.GameManager.Turb, 1.0f));
-            transform.LookAt(Application.Instance.GameManager.GravityBody.Position);
-        }
-        else //friendly
-        {
-            Material.SetColor("_Color", Color.HSVToRGB(Application.Instance.GameManager.Turb, 0.5f, 1.0f));
-        }
+        Color planetoidColor = (Type == PlanetoidType.HOSTILE) ?
+            Color.HSVToRGB(Application.Instance.GameManager.HostileHue, 1.0f - Application.Instance.GameManager.Turb * 0.5f, 1.0f) : 
+            Color.white;
 
+        Material.SetColor("_Color", planetoidColor);
+
+        transform.LookAt(Application.Instance.GameManager.GravityBody.Position);
         Collider.attachedRigidbody.velocity = Vector3.ClampMagnitude(Collider.attachedRigidbody.velocity, maxSpeed);
     }
 
