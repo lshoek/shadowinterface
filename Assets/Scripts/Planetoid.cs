@@ -39,27 +39,48 @@ public class Planetoid : MonoBehaviour
 
     void Update()
     {
-        // color flashing
+        // type specific
         if (Type == PlanetoidType.HOSTILE)
-            Material.SetColor("_Color", Color.HSVToRGB(Application.Instance.GameManager.FriendlyHue, Application.Instance.GameManager.Turb, 1.0f));
-        else
+        {
             Material.SetColor("_Color", Color.HSVToRGB(Application.Instance.GameManager.HostileHue, Application.Instance.GameManager.Turb, 1.0f));
+            transform.LookAt(Application.Instance.GameManager.GravityBody.Position);
+        }
+        else //friendly
+        {
+            Material.SetColor("_Color", Color.HSVToRGB(Application.Instance.GameManager.Turb, 0.5f, 1.0f));
+        }
 
         Collider.attachedRigidbody.velocity = Vector3.ClampMagnitude(Collider.attachedRigidbody.velocity, maxSpeed);
     }
 
     void OnCollisionEnter(Collision collision)
     {
-        if (collision.gameObject.name == "ColliderMesh")
+        if (manager.State == GameManager.GameState.RUNNING)
         {
-            manager.AddCollision(this);
-        }
-        if (collision.gameObject.name == "Planet")
-        {
-            GameObject ob = Instantiate(Resources.Load("Prefabs/CrossMark") as GameObject);
-            ob.transform.position = transform.position;
-
-            manager.StopGame();
+            if (Type == PlanetoidType.HOSTILE)
+            {
+                if (collision.gameObject.name == "ColliderMesh")
+                {
+                    manager.AddCollision(this);
+                }
+                if (collision.gameObject.name == "Planet")
+                {
+                    manager.SpawnCross(transform.position);
+                    manager.StopGame();
+                }
+            }
+            else
+            {
+                if (collision.gameObject.name == "ColliderMesh")
+                {
+                    manager.SpawnCross(transform.position);
+                    manager.StopGame();
+                }
+                if (collision.gameObject.name == "Planet")
+                {
+                    manager.AddCollision(this);
+                }
+            }
         }
     }
 

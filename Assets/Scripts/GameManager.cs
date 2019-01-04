@@ -41,7 +41,7 @@ public class GameManager : MonoBehaviour
             state = value;
         }
     }
-    public float Turb { get { return turb; } }
+    public float Turb { get; private set; }
 
     [SerializeField] [Range(0.0f, 10.0f)] float noiseMultiplier = 1.5f;
     [SerializeField] [Range(0.0f, 1.0f)] float friendlyPlanetoidRate = 0.1f;
@@ -58,6 +58,7 @@ public class GameManager : MonoBehaviour
 
     float startTime = 0.0f;
     float survivalTime = 0.0f;
+    float bestSurvivalTime = 0.0f;
 
     float lastSpawned = 0.0f;
     float initialSpawnInterval = 5.0f;
@@ -65,9 +66,8 @@ public class GameManager : MonoBehaviour
 
     Vector2 direction;
     Vector2 noiseStep;
-    float turb;
-
     public TextMeshPro InfoTextMesh;
+    public TextMeshPro BestScoreTextMesh;
     public TextMeshPro ScoreTextMesh;
     public Animator Shoeprints;
 
@@ -84,11 +84,14 @@ public class GameManager : MonoBehaviour
     private void Idle()
     {
         State = GameState.IDLE;
+
         DespawnAllPlanetoids();
+        foreach (GameObject ob in GameObject.FindGameObjectsWithTag("X")) Destroy(ob);
 
         ScoreTextMesh.gameObject.SetActive(false);
         Shoeprints.Play("FadeIn");
-        InfoTextMesh.text = "Step inside to start a new round";
+
+        InfoTextMesh.text = "step inside to start a new round";
     }
 
     public void StartGame()
@@ -110,7 +113,18 @@ public class GameManager : MonoBehaviour
     public void StopGame()
     {
         State = GameState.GAMEOVER;
-        InfoTextMesh.text = "GAME OVER";
+
+        string gameOverString;
+        bool newRecord = false;
+        if (survivalTime > bestSurvivalTime)
+        {
+            bestSurvivalTime = survivalTime;
+            TimeSpan timeFormat = TimeSpan.FromSeconds(survivalTime);
+            BestScoreTextMesh.text = string.Format("best {0:00}:{1:00}:{2:000}", timeFormat.Minutes, timeFormat.Seconds, timeFormat.Milliseconds);
+            newRecord = true;
+        }
+        gameOverString = newRecord ? "game over. new record." : "game over.";
+        InfoTextMesh.text = string.Format("{0} step out and wait for the shoeprints", gameOverString);
 
         if (!Watcher.UserInPlayField)
             Idle();
@@ -122,8 +136,8 @@ public class GameManager : MonoBehaviour
         float intensityRamp = (elapsedTime / 250.0f) + 1.0f;
 
         noiseStep = direction * elapsedTime * noiseMultiplier;
-        turb = Mathf.PerlinNoise(noiseStep.x, noiseStep.y);
-        float noisyAmplitude = (elapsedTime + 10.0f * turb) * intensityRamp;
+        Turb = Mathf.PerlinNoise(noiseStep.x, noiseStep.y);
+        float noisyAmplitude = (elapsedTime + 10.0f * Turb) * intensityRamp;
 
         Vector3 spawnVector = GravityBody.Position + new Vector3(Mathf.Cos(noisyAmplitude), 0.0f,Mathf.Sin(noisyAmplitude)) * spawnVectorMagnitude;
         Debug.DrawLine(GravityBody.Position, spawnVector);
@@ -140,7 +154,7 @@ public class GameManager : MonoBehaviour
                 else
                     SpawnPlanetoid(PlanetoidType.FRIENDLY, spawnVector, Random.Range(1.0f, 1.5f), Random.Range(0.75f, 2.0f));
 
-                spawnInterval = initialSpawnInterval / (intensityRamp + Mathf.Abs(turb) * 3.0f);
+                spawnInterval = initialSpawnInterval / (intensityRamp + Mathf.Abs(Turb) * 3.0f);
                 lastSpawned = elapsedTime;
             }
             GravityBody.UpdateSubjects(planetoids);
@@ -155,6 +169,12 @@ public class GameManager : MonoBehaviour
             //ScoreTextMesh.rectTransform.pivot = new Vector2(0.0f, -4.5f);
             //ScoreTextMesh.transform.rotation = Quaternion.Euler(new Vector3(90.0f, -Generator.GetSmoothAngle() * Mathf.Rad2Deg + 90, 0.0f));
         }
+    }
+
+    public void SpawnCross(Vector3 position)
+    {
+        GameObject ob = Instantiate(Resources.Load("Prefabs/CrossMark") as GameObject);
+        ob.transform.position = position;
     }
 
     public void AddCollision(Planetoid poid)
@@ -183,10 +203,10 @@ public class GameManager : MonoBehaviour
     private void SpawnPlanetoid(PlanetoidType type, Vector3 position, float drag, float size)
     {
         GameObject ob = (type == PlanetoidType.HOSTILE) ? 
-            Instantiate(Resources.Load("Prefabs/Planetoid") as GameObject) : 
-            Instantiate(Resources.Load("Prefabs/Ship") as GameObject);
+            Instantiate(Resources.Load("Prefabs/Ship") as GameObject) : 
+            Instantiate(Resources.Load("Prefabs/Planetoid") as GameObject);
 
-        ob.name = (type == PlanetoidType.HOSTILE) ? "poid" : "ship";
+        ob.name = (type == PlanetoidType.HOSTILE) ? "ship" : "poid";
         ob.transform.SetParent(Application.Instance.WorldParent);
         ob.transform.position = position;
 
