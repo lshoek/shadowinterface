@@ -45,6 +45,11 @@ public class GameManager : MonoBehaviour
 
     [SerializeField] [Range(0.0f, 10.0f)] float noiseMultiplier = 1.5f;
     [SerializeField] [Range(0.0f, 1.0f)] float friendlyPlanetoidRate = 0.1f;
+    [SerializeField] private float hostileHue;
+    [SerializeField] private float friendlyHue;
+
+    public float HostileHue { get { return hostileHue; } }
+    public float FriendlyHue{ get { return friendlyHue; } }
 
     const float spawnVectorMagnitude = 20.0f;
 

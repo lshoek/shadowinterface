@@ -20,9 +20,6 @@ public class Planetoid : MonoBehaviour
     [HideInInspector] public Collider Collider;
     [HideInInspector] public Material Material = null;
 
-    [SerializeField] private float hostileHue;
-    [SerializeField] private float friendlyHue;
-
     [SerializeField] private float defaultMaxSpeed = 2.0f;
     private float maxSpeed;
 
@@ -32,9 +29,7 @@ public class Planetoid : MonoBehaviour
     void Awake()
     {
         Collider = GetComponent<Collider>();
-        
-        if (Type == PlanetoidType.HOSTILE)
-            Material = GetComponent<Renderer>().material;
+        Material = GetComponent<Renderer>().material;
 
         defaultDrag = Collider.attachedRigidbody.drag;
         defaultSize = Collider.transform.localScale.x;
@@ -46,9 +41,9 @@ public class Planetoid : MonoBehaviour
     {
         // color flashing
         if (Type == PlanetoidType.HOSTILE)
-            Material.SetColor("_Color", Color.HSVToRGB(hostileHue, Application.Instance.GameManager.Turb, 1.0f));
+            Material.SetColor("_Color", Color.HSVToRGB(Application.Instance.GameManager.FriendlyHue, Application.Instance.GameManager.Turb, 1.0f));
         else
-            Material.SetColor("_Color", Color.HSVToRGB(friendlyHue, Application.Instance.GameManager.Turb, 1.0f));
+            Material.SetColor("_Color", Color.HSVToRGB(Application.Instance.GameManager.HostileHue, Application.Instance.GameManager.Turb, 1.0f));
 
         Collider.attachedRigidbody.velocity = Vector3.ClampMagnitude(Collider.attachedRigidbody.velocity, maxSpeed);
     }
@@ -58,14 +53,20 @@ public class Planetoid : MonoBehaviour
         if (collision.gameObject.name == "ColliderMesh")
         {
             manager.AddCollision(this);
-            // play explosion animation
         }
         if (collision.gameObject.name == "Planet")
         {
+            GameObject ob = Instantiate(Resources.Load("Prefabs/CrossMark") as GameObject);
+            ob.transform.position = transform.position;
+
             manager.StopGame();
-            // play hit animation for planet and explosion for planetoid
-            // player takes damage or loses game
         }
+    }
+
+    void OnDestroy()
+    {
+        GameObject ob = Instantiate(Resources.Load("Prefabs/Explosion") as GameObject);
+        ob.transform.position = transform.position;
     }
 
     public void MultiplyDrag(float scalar)

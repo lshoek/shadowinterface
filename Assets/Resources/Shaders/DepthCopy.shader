@@ -51,6 +51,7 @@ Shader "Custom/DepthCopy"
 				v2f OUT;
 				OUT.pos = UnityObjectToClipPos(IN.vertex);
 				OUT.uv = IN.uv;
+				OUT.uv.x = inv(OUT.uv.x);
 				return OUT;
 			}
 

@@ -14,7 +14,7 @@ public class PlayfieldWatcher : MonoBehaviour
     private float lastCollisionTime = 0.0f;
     private BoxCollider boxCollider;
 
-    private void Start()
+    void Start()
     {
         boxCollider = GetComponent<BoxCollider>();
     }
