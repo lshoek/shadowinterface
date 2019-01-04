@@ -79,8 +79,6 @@ public class GameManager : MonoBehaviour
         planetoids = new List<Planetoid>();
         planetoidsToDespawn = new List<Planetoid>();
         Idle();
-
-        StartGame();
     }
 
     private void Idle()
