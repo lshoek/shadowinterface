@@ -108,6 +108,7 @@ public class GameManager : MonoBehaviour
         spawnInterval = initialSpawnInterval;
 
         Shoeprints.Play("FadeOut");
+        InfoTextMesh.text = string.Format("survival mode");
     }
 
     public void StopGame()
@@ -139,7 +140,10 @@ public class GameManager : MonoBehaviour
         Turb = Mathf.PerlinNoise(noiseStep.x, noiseStep.y);
         float noisyAmplitude = (elapsedTime + 10.0f * Turb) * intensityRamp;
 
-        Vector3 spawnVector = GravityBody.Position + new Vector3(Mathf.Cos(noisyAmplitude), 0.0f,Mathf.Sin(noisyAmplitude)) * spawnVectorMagnitude;
+        float cosine = Mathf.Cos(noisyAmplitude);
+        float sine = Mathf.Abs(Mathf.Sin(noisyAmplitude));
+
+        Vector3 spawnVector = GravityBody.Position + new Vector3(cosine, 0.0f, sine) * spawnVectorMagnitude;
         Debug.DrawLine(GravityBody.Position, spawnVector);
 
         if (State == GameState.RUNNING)
@@ -164,7 +168,6 @@ public class GameManager : MonoBehaviour
             TimeSpan timeFormat = TimeSpan.FromSeconds(survivalTime);
 
             ScoreTextMesh.text = string.Format("{0:00}:{1:00}:{2:000}", timeFormat.Minutes, timeFormat.Seconds, timeFormat.Milliseconds);
-            InfoTextMesh.text = string.Format("intensity: {0}", intensityRamp);
 
             //ScoreTextMesh.rectTransform.pivot = new Vector2(0.0f, -4.5f);
             //ScoreTextMesh.transform.rotation = Quaternion.Euler(new Vector3(90.0f, -Generator.GetSmoothAngle() * Mathf.Rad2Deg + 90, 0.0f));
