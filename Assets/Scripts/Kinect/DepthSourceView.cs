@@ -13,7 +13,8 @@ public class DepthSourceView : MonoBehaviour
     [Range(1.0f, 400.0f)] [SerializeField] float depthRescale = 400.0f;
     [Range(0.0f, 1.0f)] [SerializeField] float surfaceCutoff0 = 0.05f;
     [Range(0.0f, 1.0f)] [SerializeField] float surfaceCutoff1 = 1.0f;
-    [Range(-100.0f, 100.0f)] [SerializeField] float shear = 32.0f;
+    [Range(-100.0f, 100.0f)] [SerializeField] float shearY = 20.0f;
+    [Range(-100.0f, 100.0f)] [SerializeField] float shearX = 20.0f;
 
     public Camera SimulatedKinectCamera;
 
@@ -159,7 +160,8 @@ public class DepthSourceView : MonoBehaviour
     private void UpdateDepthMesh(DepthMesh depthMesh, ushort[] depthData, float scale, int downSampleSize)
     {
         shearTransformation = Matrix4x4.identity;
-        shearTransformation[9] = shear / NUM_PIXELS;
+        shearTransformation[8] = shearX / NUM_PIXELS;
+        shearTransformation[9] = shearY / NUM_PIXELS;
 
         for (int y = 0; y < activeHeight; y += downSampleSize)
         {

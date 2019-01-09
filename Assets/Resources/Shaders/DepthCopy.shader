@@ -69,7 +69,7 @@ Shader "Custom/DepthCopy"
 
 				//return inv(d * 2.0);
 
-				fixed depth = Linear01Depth(SAMPLE_DEPTH_TEXTURE_PROJ(_DepthTex, i.uv));
+				fixed depth = SAMPLE_DEPTH_TEXTURE_PROJ(_DepthTex, i.uv);
 				depth = map(depth, _SurfaceCutoff0, _SurfaceCutoff1, 0.0, 1.0);
 				return depth;
 			}
