@@ -26,6 +26,8 @@ public class Planetoid : MonoBehaviour
     private float defaultDrag;
     private float defaultSize;
 
+    private bool explosionAnim = true;
+
     void Awake()
     {
         Collider = GetComponent<Collider>();
@@ -75,7 +77,9 @@ public class Planetoid : MonoBehaviour
                 }
                 if (collision.gameObject.name == "Planet")
                 {
+                    manager.GravityBody.PlanetAnimator.Play("Inhabited");
                     manager.AddCollision(this);
+                    explosionAnim = false;
                 }
             }
         }
@@ -83,8 +87,11 @@ public class Planetoid : MonoBehaviour
 
     void OnDestroy()
     {
-        GameObject ob = Instantiate(Resources.Load("Prefabs/Explosion") as GameObject);
-        ob.transform.position = transform.position;
+        if (explosionAnim)
+        {
+            GameObject ob = Instantiate(Resources.Load("Prefabs/Explosion") as GameObject);
+            ob.transform.position = transform.position;
+        }
     }
 
     public void MultiplyDrag(float scalar)

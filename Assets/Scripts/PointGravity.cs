@@ -6,12 +6,14 @@ public class PointGravity : MonoBehaviour
     public float AttractiveForce = 2.0f;
 
     public Vector3 Position { get { return mainRb.position; } }
+    public Animator PlanetAnimator;
 
     private Rigidbody mainRb;
 
     void Start()
     {
         mainRb = GetComponent<Rigidbody>();
+        PlanetAnimator = GetComponent<Animator>();
     }
 
     public void UpdateSubjects(List<Planetoid> planetoids)
