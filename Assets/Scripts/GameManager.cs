@@ -93,7 +93,6 @@ public class GameManager : MonoBehaviour
         planetoidsToDespawn = new List<Planetoid>();
 
         ScoreText.GetComponent<Animator>().Play("Off");
-        BestText.GetComponent<Animator>().Play("Off");
         DinoScoreText.GetComponent<Animator>().Play("Off");
         DinoHeadAnimator.GetComponent<Animator>().Play("Off");
 
