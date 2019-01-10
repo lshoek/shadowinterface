@@ -30,8 +30,8 @@ public class Planetoid : MonoBehaviour
 
     void Awake()
     {
-        Collider = GetComponent<Collider>();
-        Material = GetComponent<Renderer>().material;
+        Collider = GetComponentInChildren<Collider>();
+        Material = GetComponentInChildren<Renderer>().material;
 
         defaultDrag = Collider.attachedRigidbody.drag;
         defaultSize = Collider.transform.localScale.x;
@@ -45,7 +45,7 @@ public class Planetoid : MonoBehaviour
         Color planetoidColor = (Type == PlanetoidType.HOSTILE) ? Application.Instance.Palette.LIGHTSALMONPINK : Color.white;
         Material.SetColor("_Color", planetoidColor);
 
-        transform.LookAt(Application.Instance.GameManager.GravityBody.Position);
+        transform.parent.LookAt(Application.Instance.GameManager.GravityBody.Position);
         Collider.attachedRigidbody.velocity = Vector3.ClampMagnitude(Collider.attachedRigidbody.velocity, maxSpeed);
     }
 

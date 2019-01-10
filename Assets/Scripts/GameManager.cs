@@ -125,7 +125,6 @@ public class GameManager : MonoBehaviour
         State = GameState.RUNNING;
 
         startTime = Time.time;
-        elapsedTime = 0.0f;
         Dinosaurs = 0;
 
         // random seed
@@ -175,20 +174,20 @@ public class GameManager : MonoBehaviour
     void Update()
     {
         elapsedTime = Time.time;
-        float intensityRamp = (elapsedTime / 250.0f) + 1.0f;
-
-        noiseStep = direction * elapsedTime * noiseMultiplier;
-        Turb = Mathf.PerlinNoise(noiseStep.x, noiseStep.y);
-        float noisyAmplitude = (elapsedTime + 10.0f * Turb) * intensityRamp;
-
-        float cosine = Mathf.Cos(noisyAmplitude);
-        float sine = Mathf.Abs(Mathf.Sin(noisyAmplitude));
-
-        Vector3 spawnVector = GravityBody.Position + new Vector3(cosine, 0.0f, sine) * spawnVectorMagnitude;
-        Debug.DrawLine(GravityBody.Position, spawnVector);
-
         if (State == GameState.RUNNING)
         {
+            float intensityRamp = (elapsedTime / 250.0f) + 1.0f;
+
+            noiseStep = direction * elapsedTime * noiseMultiplier;
+            Turb = Mathf.PerlinNoise(noiseStep.x, noiseStep.y);
+            float noisyAmplitude = (elapsedTime + 10.0f * Turb) * intensityRamp;
+
+            float cosine = Mathf.Cos(noisyAmplitude);
+            float sine = Mathf.Abs(Mathf.Sin(noisyAmplitude));
+
+            Vector3 spawnVector = GravityBody.Position + new Vector3(cosine, 0.0f, sine) * spawnVectorMagnitude;
+            Debug.DrawLine(GravityBody.Position, spawnVector);
+
             // planetoids
             HandleCollisions();
 
@@ -249,7 +248,7 @@ public class GameManager : MonoBehaviour
     {
         GameObject ob = (type == PlanetoidType.HOSTILE) ? 
             Instantiate(Resources.Load("Prefabs/Ship") as GameObject) : 
-            Instantiate(Resources.Load("Prefabs/Planetoid") as GameObject);
+            Instantiate(Resources.Load("Prefabs/Dino") as GameObject);
 
         ob.name = (type == PlanetoidType.HOSTILE) ? "ship" : "dino";
         ob.transform.SetParent(Application.Instance.WorldParent);
@@ -257,7 +256,7 @@ public class GameManager : MonoBehaviour
 
         if (ob != null)
         {
-            Planetoid p = ob.GetComponent<Planetoid>();
+            Planetoid p = ob.GetComponentInChildren<Planetoid>();
             p.Manager = this;
             p.MultiplyDrag(drag);
             p.MultiplySize(size);
@@ -269,7 +268,7 @@ public class GameManager : MonoBehaviour
     private void DespawnPlanetoid(Planetoid p)
     {
         planetoids.Remove(p);
-        Destroy(p.gameObject);
+        Destroy(p.transform.parent.gameObject);
     }
 
     private void DespawnAllPlanetoids()
