@@ -47,11 +47,6 @@ public class GameManager : MonoBehaviour
 
     [SerializeField] [Range(0.0f, 10.0f)] float noiseMultiplier = 1.5f;
     [SerializeField] [Range(0.0f, 1.0f)] float friendlyPlanetoidRate = 0.1f;
-    [SerializeField] [Range(0.0f, 1.0f)] private float hostileHue;
-    [SerializeField] [Range(0.0f, 1.0f)] private float friendlyHue;
-
-    public float HostileHue { get { return hostileHue; } }
-    public float FriendlyHue{ get { return friendlyHue; } }
 
     const float spawnVectorMagnitude = 20.0f;
 
@@ -97,6 +92,7 @@ public class GameManager : MonoBehaviour
         DinoHeadAnimator.GetComponent<Animator>().Play("Off");
 
         Idle();
+        StartGame();
     }
 
     private void Idle()
@@ -200,9 +196,9 @@ public class GameManager : MonoBehaviour
             if (elapsedTime - lastSpawned > spawnInterval)
             {
                 if (Random.Range(0.0f, 1.0f) > friendlyPlanetoidRate)
-                    SpawnPlanetoid(PlanetoidType.HOSTILE, spawnVector, Random.Range(0.75f, 1.5f), Random.Range(2.0f, 3.0f));
+                    SpawnPlanetoid(PlanetoidType.HOSTILE, spawnVector, Random.Range(0.75f, 1.5f)/intensityRamp, Random.Range(2.0f, 3.0f));
                 else
-                    SpawnPlanetoid(PlanetoidType.FRIENDLY, spawnVector, Random.Range(0.75f, 1.25f), 1.0f);
+                    SpawnPlanetoid(PlanetoidType.FRIENDLY, spawnVector, Random.Range(0.75f, 1.25f)/intensityRamp, 1.0f);
 
                 spawnInterval = initialSpawnInterval / (intensityRamp + Mathf.Abs(Turb) * 3.0f);
                 lastSpawned = elapsedTime;

@@ -23,9 +23,4 @@ public class Application : MonoBehaviour
 
         UnityEngine.Application.targetFrameRate = 60;
     }
-
-    void Start()
-    {
-        GameManager.StartGame();
-    }
 }
