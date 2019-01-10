@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 public class PointGravity : MonoBehaviour
 {
-    public float AttractiveForce = 2.0f;
+    public float AttractiveForce = 100.0f;
 
     public Vector3 Position { get { return mainRb.position; } }
     public Animator PlanetAnimator;

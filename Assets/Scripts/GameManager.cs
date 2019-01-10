@@ -92,7 +92,6 @@ public class GameManager : MonoBehaviour
         DinoHeadAnimator.GetComponent<Animator>().Play("Off");
 
         Idle();
-        StartGame();
     }
 
     private void Idle()
