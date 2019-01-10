@@ -61,7 +61,7 @@ public class GameManager : MonoBehaviour
     float elapsedTime = 0.0f;
     float startTime = 0.0f;
     float survivalTime = 0.0f;
-    float bestSurvivalTime = 0.0f;
+    double bestScore = 0;
 
     float lastSpawned = 0.0f;
     float initialSpawnInterval = 5.0f;
@@ -91,6 +91,12 @@ public class GameManager : MonoBehaviour
 
         planetoids = new List<Planetoid>();
         planetoidsToDespawn = new List<Planetoid>();
+
+        ScoreText.GetComponent<Animator>().Play("Off");
+        BestText.GetComponent<Animator>().Play("Off");
+        DinoScoreText.GetComponent<Animator>().Play("Off");
+        DinoHeadAnimator.GetComponent<Animator>().Play("Off");
+
         Idle();
     }
 
@@ -149,22 +155,27 @@ public class GameManager : MonoBehaviour
     public void StopGame()
     {
         State = GameState.GAMEOVER;
+        TimeSpan timeFormat = TimeSpan.FromSeconds(survivalTime);
+        double score = (int)timeFormat.TotalSeconds*10 + Dinosaurs*100;
 
         bool newRecord = false;
-        if (survivalTime > bestSurvivalTime)
+        if (score > bestScore)
         {
-            bestSurvivalTime = survivalTime;
-            TimeSpan timeFormat = TimeSpan.FromSeconds(survivalTime);
-            BestText.text = string.Format("best {0:00}:{1:00}:{2:000}", timeFormat.Minutes, timeFormat.Seconds, timeFormat.Milliseconds);
+            bestScore = score;
+            BestText.text = string.Format("best {0}", bestScore);
             newRecord = true;
         }
+        ScoreText.text = string.Format("{0:00}:{1:00}:{2:000} = {3} + {4} dinos x 100 = {5}", 
+            timeFormat.Minutes, timeFormat.Seconds, timeFormat.Milliseconds,
+            (int)timeFormat.TotalSeconds*10, Dinosaurs, score);
+
         InstructionsText.text = newRecord ? "new record. please step out and wait" : "please step out and wait for title screen";
 
         GameOverText.GetComponent<Animator>().Play("FadeIn");
         InstructionsText.GetComponent<Animator>().Play("FadeIn");
 
-        //if (!Watcher.UserInPlayField)
-        //    Idle();
+        if (!Watcher.UserInPlayField)
+            Idle();
     }
 
     void Update()
@@ -192,7 +203,7 @@ public class GameManager : MonoBehaviour
                 if (Random.Range(0.0f, 1.0f) > friendlyPlanetoidRate)
                     SpawnPlanetoid(PlanetoidType.HOSTILE, spawnVector, Random.Range(0.75f, 1.5f), Random.Range(2.0f, 3.0f));
                 else
-                    SpawnPlanetoid(PlanetoidType.FRIENDLY, spawnVector, Random.Range(0.5f, 1.0f), 1.0f);
+                    SpawnPlanetoid(PlanetoidType.FRIENDLY, spawnVector, Random.Range(0.75f, 1.25f), 1.0f);
 
                 spawnInterval = initialSpawnInterval / (intensityRamp + Mathf.Abs(Turb) * 3.0f);
                 lastSpawned = elapsedTime;
@@ -246,7 +257,7 @@ public class GameManager : MonoBehaviour
             Instantiate(Resources.Load("Prefabs/Ship") as GameObject) : 
             Instantiate(Resources.Load("Prefabs/Planetoid") as GameObject);
 
-        ob.name = (type == PlanetoidType.HOSTILE) ? "ship" : "poid";
+        ob.name = (type == PlanetoidType.HOSTILE) ? "ship" : "dino";
         ob.transform.SetParent(Application.Instance.WorldParent);
         ob.transform.position = position;
 

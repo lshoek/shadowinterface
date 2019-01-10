@@ -42,10 +42,7 @@ public class Planetoid : MonoBehaviour
     void Update()
     {
         // type specific
-        Color planetoidColor = (Type == PlanetoidType.HOSTILE) ?
-            Color.HSVToRGB(Application.Instance.GameManager.HostileHue, 1.0f - Application.Instance.GameManager.Turb * 0.5f, 1.0f) : 
-            Color.white;
-
+        Color planetoidColor = (Type == PlanetoidType.HOSTILE) ? Application.Instance.Palette.LIGHTSALMONPINK : Color.white;
         Material.SetColor("_Color", planetoidColor);
 
         transform.LookAt(Application.Instance.GameManager.GravityBody.Position);
