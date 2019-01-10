@@ -4,7 +4,7 @@ using static GameManager;
 
 public class PlayfieldWatcher : MonoBehaviour
 {
-    [SerializeField] float PlayfieldTimeout = 8.0f;
+    [SerializeField] float PlayfieldTimeout = 5.0f;
 
     public event Action OnPlayfieldOccupied;
     public event Action OnPlayfieldEmpty;

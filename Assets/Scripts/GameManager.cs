@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 using static Planetoid;
 using Random = UnityEngine.Random;
 
@@ -67,12 +67,22 @@ public class GameManager : MonoBehaviour
     float initialSpawnInterval = 5.0f;
     float spawnInterval;
 
+    public int Dinosaurs = 0;
+    bool startup = true;
+
     Vector2 direction;
     Vector2 noiseStep;
-    public TextMeshPro InfoTextMesh;
-    public TextMeshPro BestScoreTextMesh;
-    public TextMeshPro ScoreTextMesh;
-    public Animator Shoeprints;
+
+    [SerializeField] Text InstructionsText;
+    [SerializeField] Text BestText;
+    [SerializeField] Text ScoreText;
+    [SerializeField] Text DinoScoreText;
+    [SerializeField] Text GameOverText;
+    [SerializeField] Text IntroText;
+
+    [SerializeField] Animator TitleAnimator;
+    [SerializeField] Animator ShoeprintsAnimator;
+    [SerializeField] Animator DinoHeadAnimator;
 
     void Awake()
     {
@@ -91,10 +101,21 @@ public class GameManager : MonoBehaviour
         DespawnAllPlanetoids();
         foreach (GameObject ob in GameObject.FindGameObjectsWithTag("X")) Destroy(ob);
 
-        ScoreTextMesh.gameObject.SetActive(false);
-        Shoeprints.Play("FadeIn");
+        if (!startup)
+        {
+            GameOverText.GetComponent<Animator>().Play("FadeOut");
+            InstructionsText.GetComponent<Animator>().Play("FadeIn");
+            ScoreText.GetComponent<Animator>().Play("FadeOut");
+            DinoScoreText.GetComponent<Animator>().Play("FadeOut");
 
-        InfoTextMesh.text = "step inside to start a new round";
+            DinoHeadAnimator.GetComponent<Animator>().Play("FadeOut");
+            ShoeprintsAnimator.Play("FadeIn");
+            TitleAnimator.Play("FadeIn");
+
+            InstructionsText.text = "step inside to play";
+        }
+        else GameOverText.GetComponent<Animator>().Play("Off");
+        startup = false;
     }
 
     public void StartGame()
@@ -103,9 +124,9 @@ public class GameManager : MonoBehaviour
 
         State = GameState.RUNNING;
 
-        ScoreTextMesh.gameObject.SetActive(true);
         startTime = Time.time;
         elapsedTime = 0.0f;
+        Dinosaurs = 0;
 
         // random seed
         float randomAlpha = Random.value * Mathf.PI * 2f;
@@ -113,28 +134,37 @@ public class GameManager : MonoBehaviour
 
         spawnInterval = initialSpawnInterval;
 
-        Shoeprints.Play("FadeOut");
-        InfoTextMesh.text = string.Format("deflect hostile aircraft. save the dinosaurs.");
+        InstructionsText.GetComponent<Animator>().Play("FadeOut");
+        ScoreText.GetComponent<Animator>().Play("FadeIn");
+        DinoScoreText.GetComponent<Animator>().Play("FadeIn");
+        IntroText.GetComponent<Animator>().Play("Show");
+
+        DinoHeadAnimator.Play("FadeIn");
+        ShoeprintsAnimator.Play("FadeOut");
+        TitleAnimator.Play("FadeOut");
+
+        InstructionsText.text = string.Format("deflect hostile aircraft. save the dinosaurs.");
     }
 
     public void StopGame()
     {
         State = GameState.GAMEOVER;
 
-        string gameOverString;
         bool newRecord = false;
         if (survivalTime > bestSurvivalTime)
         {
             bestSurvivalTime = survivalTime;
             TimeSpan timeFormat = TimeSpan.FromSeconds(survivalTime);
-            BestScoreTextMesh.text = string.Format("best {0:00}:{1:00}:{2:000}", timeFormat.Minutes, timeFormat.Seconds, timeFormat.Milliseconds);
+            BestText.text = string.Format("best {0:00}:{1:00}:{2:000}", timeFormat.Minutes, timeFormat.Seconds, timeFormat.Milliseconds);
             newRecord = true;
         }
-        gameOverString = newRecord ? "game over. new record." : "game over.";
-        InfoTextMesh.text = string.Format("{0} step out and wait for the shoeprints", gameOverString);
+        InstructionsText.text = newRecord ? "new record. please step out and wait" : "please step out and wait for title screen";
 
-        if (!Watcher.UserInPlayField)
-            Idle();
+        GameOverText.GetComponent<Animator>().Play("FadeIn");
+        InstructionsText.GetComponent<Animator>().Play("FadeIn");
+
+        //if (!Watcher.UserInPlayField)
+        //    Idle();
     }
 
     void Update()
@@ -160,9 +190,9 @@ public class GameManager : MonoBehaviour
             if (elapsedTime - lastSpawned > spawnInterval)
             {
                 if (Random.Range(0.0f, 1.0f) > friendlyPlanetoidRate)
-                    SpawnPlanetoid(PlanetoidType.HOSTILE, spawnVector, Random.Range(1.0f, 1.75f), Random.Range(2.0f, 3.0f));
+                    SpawnPlanetoid(PlanetoidType.HOSTILE, spawnVector, Random.Range(0.75f, 1.5f), Random.Range(2.0f, 3.0f));
                 else
-                    SpawnPlanetoid(PlanetoidType.FRIENDLY, spawnVector, Random.Range(1.0f, 1.5f), Random.Range(0.5f, 1.0f));
+                    SpawnPlanetoid(PlanetoidType.FRIENDLY, spawnVector, Random.Range(0.5f, 1.0f), 1.0f);
 
                 spawnInterval = initialSpawnInterval / (intensityRamp + Mathf.Abs(Turb) * 3.0f);
                 lastSpawned = elapsedTime;
@@ -173,7 +203,8 @@ public class GameManager : MonoBehaviour
             survivalTime = elapsedTime - startTime;
             TimeSpan timeFormat = TimeSpan.FromSeconds(survivalTime);
 
-            ScoreTextMesh.text = string.Format("{0:00}:{1:00}:{2:000}", timeFormat.Minutes, timeFormat.Seconds, timeFormat.Milliseconds);
+            ScoreText.text = string.Format("{0:00}:{1:00}:{2:000}", timeFormat.Minutes, timeFormat.Seconds, timeFormat.Milliseconds);
+            DinoScoreText.text = string.Format("{0:000}", Dinosaurs);
 
             //ScoreTextMesh.rectTransform.pivot = new Vector2(0.0f, -4.5f);
             //ScoreTextMesh.transform.rotation = Quaternion.Euler(new Vector3(90.0f, -Generator.GetSmoothAngle() * Mathf.Rad2Deg + 90, 0.0f));

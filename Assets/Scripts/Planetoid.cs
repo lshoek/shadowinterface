@@ -78,6 +78,7 @@ public class Planetoid : MonoBehaviour
                 if (collision.gameObject.name == "Planet")
                 {
                     manager.GravityBody.PlanetAnimator.Play("Inhabited");
+                    manager.Dinosaurs++;
                     manager.AddCollision(this);
                     explosionAnim = false;
                 }
