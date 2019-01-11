@@ -56,12 +56,13 @@ public class DepthMesh
             }
         }
         Apply();
+
+        // set triangles once
+        mesh.triangles = triangles;
     }
 
     public void Apply()
     {
-        mesh.MarkDynamic();
         mesh.vertices = verts;
-        mesh.triangles = triangles;
     }
 }

@@ -34,8 +34,7 @@ public class DepthSourceView : MonoBehaviour
     private Material depthCopyMaterial;
 
     private MeshCollider meshCollider;
-    private MeshFilter colliderMeshFilter;
-    private MeshFilter meshFilter;
+    private MeshFilter kinectMeshFilter;
 
     private RenderTexture simulatedKinectRenderBuffer;
     public RenderTexture simulatedKinectRenderBufferColor;
@@ -55,9 +54,8 @@ public class DepthSourceView : MonoBehaviour
     void Start()
     {
         meshCollider = ColliderMesh.GetComponent<MeshCollider>();
-        colliderMeshFilter = ColliderMesh.GetComponent<MeshFilter>();
 
-        meshFilter = GetComponent<MeshFilter>();
+        kinectMeshFilter = GetComponent<MeshFilter>();
 
         blurMaterial = new Material(Resources.Load("Shaders/Blur13") as Shader);
         depthCopyMaterial = new Material(Resources.Load("Shaders/DepthCopy") as Shader);
@@ -77,6 +75,14 @@ public class DepthSourceView : MonoBehaviour
             kinectDepthMesh = new DepthMesh(activeWidth / KINECTMESH_DOWNSAMPLING, activeHeight / KINECTMESH_DOWNSAMPLING);
             colliderDepthMesh = new DepthMesh(activeWidth / COLLIDERMESH_DOWNSAMPLING, activeHeight / COLLIDERMESH_DOWNSAMPLING);
 
+            kinectMeshFilter.mesh.MarkDynamic();
+            kinectMeshFilter.mesh.vertices = kinectDepthMesh.mesh.vertices;
+            kinectMeshFilter.mesh.triangles = kinectDepthMesh.mesh.triangles;
+
+            meshCollider.sharedMesh.MarkDynamic();
+            meshCollider.sharedMesh.vertices = colliderDepthMesh.mesh.vertices;
+            meshCollider.sharedMesh.triangles = colliderDepthMesh.mesh.triangles;
+
             // texture buffers
             simulatedKinectRenderBuffer = new RenderTexture(activeWidth, activeHeight, 16, RenderTextureFormat.Depth);
             simulatedKinectRenderBufferColor = new RenderTexture(activeWidth, activeHeight, 0, RenderTextureFormat.ARGB32);
@@ -95,7 +101,7 @@ public class DepthSourceView : MonoBehaviour
         ushort[] rawDepthData = CropRawDepth(DepthSourceManager.GetData(), activeWidth, activeHeight);
         UpdateDepthMesh(kinectDepthMesh, rawDepthData, depthRescale, KINECTMESH_DOWNSAMPLING);
 
-        meshFilter.mesh = kinectDepthMesh.mesh;
+        kinectMeshFilter.mesh.vertices = kinectDepthMesh.mesh.vertices;
     }
 
     private void ProcessDepth()
@@ -136,8 +142,6 @@ public class DepthSourceView : MonoBehaviour
             digitalKinectDepthTexture.Apply();
 
             UpdateDepthMesh(colliderDepthMesh, digitalKinectDepthTexture, 1.0f, COLLIDERMESH_DOWNSAMPLING);
-
-            colliderMeshFilter.mesh = colliderDepthMesh.mesh;
             meshCollider.sharedMesh = colliderDepthMesh.mesh;
 
             requests.Dequeue();
@@ -183,7 +187,6 @@ public class DepthSourceView : MonoBehaviour
             }
         }
         depthMesh.Apply();
-        depthMesh.mesh.RecalculateNormals();
     }
 
     // second pass
